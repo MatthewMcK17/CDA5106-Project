@@ -71,7 +71,6 @@ static inline char *convertInclusion(Inclusion inclusion_property){
 
 
 void printInput() {
-    //const char * const replacementStrings[] = {LRU, FIFO, foroptimal};
     printf("===== Simulator configuration =====\n");
     printf("BLOCKSIZE: %d\n", block_size);
     printf("L1_SIZE: %d\n", l1_size);
