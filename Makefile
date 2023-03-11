@@ -1,5 +1,5 @@
 CC=gcc
-TARGET=sim
+TARGET=sim_cache
 DEPS=simulator.h
 
 all: simulator.c $(DEPS)
