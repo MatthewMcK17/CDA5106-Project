@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 }
 
 void usage() {
-    char *usage_statement = "Usage: ./sim <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPLACEMENT_POLICY> <INCLUSION_PROPERTY> <trace_file> \n" \
+    char *usage_statement = "Usage: ./sim_cache <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPLACEMENT_POLICY> <INCLUSION_PROPERTY> <trace_file> \n" \
                             "   <BLOCKSIZE> - Block size in bytes. Same block size for all caches in the memory hierarchy. (positive integer)\n" \
                             "   <L1_SIZE> - L1 cache size in bytes. (positive integer) \n" \
                             "   <L1_ASSOC> - L1 set-associativity. 1 is direct-mapped. (positive integer)\n" \
