@@ -6,7 +6,8 @@
 #define ISSUE_SIZE 12
 #define EXECUTE_SIZE 12
 
-enum instruction_state {IF, ID, IS, EX, WB};
+typedef enum{LRU, FIFO, foroptimal} Replacement;
+typedef enum{noninclusive, inclusive} Inclusion;
 
 typedef struct instruction instruction;
 typedef struct instruction_queue instruction_queue;
@@ -23,18 +24,13 @@ struct instruction {
     int dst;
     int src1;
     int src2;
-    instruction *next = NULL;
 };
 
 struct instruction_queue {
-    ??? *head = ??;
-    ??? *tail = ??;
     int size;
 };
 
 struct fake_ROB {
-    ??? *head = ??;
-    ??? *tail = ??;
     int size;
 };
 
@@ -59,3 +55,4 @@ void Issue();
 void Dispatch();
 void Fetch();
 int Advance_Cycle();
+void printInput();
