@@ -12,8 +12,17 @@ Replacement replacement_policy;
 Inclusion inclusion_property;
 char *trace_file;
 
+struct Node {
+    char data[10];
+    struct Node* next;
+    struct Node* prev;
+};
+
+struct Node *head = NULL;
+struct Node *last = NULL;
+
 int main(int argc, char *argv[]) {
-    //FILE *trace_file_open;
+    FILE *trace_file_open;
     if (argc != 9) {
         usage();
     }
@@ -26,15 +35,15 @@ int main(int argc, char *argv[]) {
     replacement_policy = atoi(argv[6]);
     inclusion_property = atoi(argv[7]);
     trace_file = argv[8];
-    //trace_file_open = fopen(argv[8], "r");
+    trace_file_open = fopen(argv[8], "r");
+    printInput();
+    printFile(trace_file_open);
 
     //dispatch = malloc(sizeof(dispatch_list));
     //issue = malloc(sizeof(issue_list));
     //execute = malloc(sizeof(execute_list));
 
-    printInput();
-
-    //fclose(trace_file);
+    fclose(trace_file_open);
     //free_all(dispatch, issue, execute);
 }
 
@@ -81,6 +90,80 @@ void printInput() {
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
     printf("INCLUSION POLICY: %s\n", convertInclusion(inclusion_property));
     printf("trace_file: %s\n", trace_file);
+}
+
+int length() {
+   int length = 0;
+   struct Node *current;
+	
+   for(current = head; current != NULL; current = current->next){
+      length++;
+   }
+	
+   return length;
+}
+
+void append(struct Node** head_ref, char *new_data[10])
+{
+    if(length() > 63){
+        return;
+    }
+    struct Node* new_node
+        = (struct Node*)malloc(sizeof(struct Node));
+ 
+    struct Node* last = *head_ref; 
+ 
+    new_node->data = new_data;
+ 
+    new_node->next = NULL;
+ 
+    if (*head_ref == NULL) {
+        new_node->prev = NULL;
+        *head_ref = new_node;
+        return;
+    }
+ 
+    while (last->next != NULL)
+        last = last->next;
+    
+    last->next = new_node;
+ 
+    new_node->prev = last;
+ 
+    return;
+}
+
+void printList(struct Node* node)
+{
+    struct Node* last;
+    printf("\nTraversal in forward direction \n");
+    while (node != NULL) {
+        printf("%s ", node->data);
+        last = node;
+        node = node->next;
+    }
+}
+
+void fifo(char *c,char *i[10]){
+    //printf ("%c %s", c, i);
+    append(&head, i);
+}
+
+void printFile(FILE *trace_file_open) {
+    //unsigned int c;
+    //unsigned int i;
+    char *c;
+    char *i[10];
+    fscanf(trace_file_open, "%c %s", &c, &i);
+
+    while (!feof(trace_file_open))
+    {
+        //printf ("%c %s", c, i);
+        fifo(c, i);
+        fscanf(trace_file_open,"%c %s", &c, &i);
+    }
+    printf("\n");
+    printList(head);
 }
 
 void FakeRetire() {

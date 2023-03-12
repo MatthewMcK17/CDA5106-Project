@@ -56,3 +56,4 @@ void Dispatch();
 void Fetch();
 int Advance_Cycle();
 void printInput();
+void printFile();
