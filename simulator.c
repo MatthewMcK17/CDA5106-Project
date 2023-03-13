@@ -257,12 +257,13 @@ void printFile(FILE *trace_file_open) {
         fifo(operation, i & (0xfffffff0));
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
+    fifo(operation, i & (0xfffffff0));
     printf("\n");
     //printList(head);
     printf("===== Simulation results (raw) =====\n");
-    printf("a. number of L1 reads: %d\n", countRead + 1);
+    printf("a. number of L1 reads: %d\n", countRead);
     printf("b. number of L1 read misses: %d\n", readMiss + 1);
-    printf("c. number of L1 writes: %d\n", countWrite + 1);
+    printf("c. number of L1 writes: %d\n", countWrite);
     printf("d. number of L1 write misses: %d\n", writeMiss + 1);
 }
 
