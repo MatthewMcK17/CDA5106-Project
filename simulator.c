@@ -12,14 +12,27 @@ Replacement replacement_policy;
 Inclusion inclusion_property;
 char *trace_file;
 
+typedef long unsigned int mem_addr;
+mem_addr addr;
+
 struct Node {
-    char data[10];
+    unsigned int data;
     struct Node* next;
     struct Node* prev;
 };
 
 struct Node *head = NULL;
 struct Node *last = NULL;
+
+int countRead = 0;
+int countWrite = 0;
+
+int readHit = 0;
+int readMiss = 0;
+int writeHit = 0;
+int writeMiss = 0;
+
+int totalCount = 1;
 
 int main(int argc, char *argv[]) {
     FILE *trace_file_open;
@@ -80,7 +93,6 @@ static inline char *convertInclusion(Inclusion inclusion_property){
 
 
 void printInput() {
-    //const char * const replacementStrings[] = {LRU, FIFO, foroptimal};
     printf("===== Simulator configuration =====\n");
     printf("BLOCKSIZE: %d\n", block_size);
     printf("L1_SIZE: %d\n", l1_size);
@@ -103,11 +115,30 @@ int length() {
    return length;
 }
 
-void append(struct Node** head_ref, char *new_data[10])
+void beginning_delete()  {  
+    struct Node *ptr;  
+    if(head == NULL)  
+    {  
+        printf("\n UNDERFLOW\n");  
+    }  
+    else if(head->next == NULL)  
+    {  
+        head = NULL;   
+        free(head);  
+        printf("\nNode Deleted\n");  
+    }  
+    else  
+    {  
+        ptr = head;  
+        head = head -> next;  
+        head -> prev = NULL;  
+        free(ptr);  
+        printf("\nNode Deleted\n");  
+    }  
+}
+
+void appendLast(struct Node** head_ref, unsigned int new_data)
 {
-    if(length() > 63){
-        return;
-    }
     struct Node* new_node
         = (struct Node*)malloc(sizeof(struct Node));
  
@@ -138,32 +169,94 @@ void printList(struct Node* node)
     struct Node* last;
     printf("\nTraversal in forward direction \n");
     while (node != NULL) {
-        printf("%s ", node->data);
+        printf("%x ", node->data);
         last = node;
         node = node->next;
     }
 }
 
-void fifo(char *c,char *i[10]){
-    //printf ("%c %s", c, i);
-    append(&head, i);
+void fifo(char operation,unsigned int i){
+    //printf ("%c %d", operation, i);
+    char y = 'r';
+    char z = 'w';
+    if(operation == y){
+        countRead++;
+        struct Node* last;
+        struct Node* temp;
+        temp = head;
+        int flag = 0;
+        while (temp != NULL) {
+            //printf("%x ", temp->data);
+            if(temp->data == i){
+                flag = 1;
+                break;
+            }
+            last = temp;
+            temp = temp->next;
+        }
+        if(flag == 1){
+            printf("Total Count: %d + Read Hit\n", totalCount);
+            readHit++;
+        }
+        else {
+            printf("Total Count: %d + Read Miss\n", totalCount);
+            readMiss++;
+        }
+    }
+    if(operation == z){
+        countWrite++;
+        struct Node* last;
+        struct Node* temp;
+        temp = head;
+        int flag = 0;
+        while (temp != NULL) {
+            //printf("%x ", temp->data);
+            if(temp->data == i){
+                flag = 1;
+                break;
+            }
+            last = temp;
+            temp = temp->next;
+        }
+        if(flag == 1){
+            writeHit++;
+            printf("Total Count: %d + Write Hit\n", totalCount);
+        }
+        else {
+            writeMiss++;
+            printf("Total Count: %d + Write Miss\n", totalCount);
+            if(length() < 64){
+                appendLast(&head, i);
+            }
+            else{
+                beginning_delete();
+                appendLast(&head, i);
+            }
+        }
+    }
+    totalCount++;
 }
 
 void printFile(FILE *trace_file_open) {
     //unsigned int c;
-    //unsigned int i;
-    char *c;
-    char *i[10];
-    fscanf(trace_file_open, "%c %s", &c, &i);
+    char operation;
+    unsigned int i;
+    //char *i[10];
+    fscanf(trace_file_open, "%c %x ", &operation, &i);
 
     while (!feof(trace_file_open))
     {
-        //printf ("%c %s", c, i);
-        fifo(c, i);
-        fscanf(trace_file_open,"%c %s", &c, &i);
+        //printf ("%c %x\n",operation, i);
+        fifo(operation, i);
+        fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
     printf("\n");
-    printList(head);
+    //printList(head);
+    printf("===== Simulation results (raw) =====\n");
+    printf("a. number of L1 reads: %d\n", countRead + 1);
+    printf("b. number of L1 read misses: %d\n", readMiss + 1);
+    printf("c. number of L1 writes: %d\n", countWrite + 1);
+    printf("d. number of L1 write misses: %d\n", writeMiss + 1);
 }
 
 void FakeRetire() {
