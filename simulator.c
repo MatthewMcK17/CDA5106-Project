@@ -201,6 +201,13 @@ void fifo(char operation,unsigned int i){
         else {
             printf("Total Count: %d + Read Miss\n", totalCount);
             readMiss++;
+            if(length() < 64){
+                appendLast(&head, i);
+            }
+            else{
+                beginning_delete();
+                appendLast(&head, i);
+            }
         }
     }
     if(operation == z){
@@ -246,8 +253,8 @@ void printFile(FILE *trace_file_open) {
 
     while (!feof(trace_file_open))
     {
-        //printf ("%c %x\n",operation, i);
-        fifo(operation, i);
+        //printf ("%c %x\n",operation, i & (0xfffffff0));
+        fifo(operation, i & (0xfffffff0));
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
     printf("\n");
