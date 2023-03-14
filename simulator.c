@@ -137,6 +137,54 @@ void beginning_delete()  {
     }  
 }
 
+void deleteLast() {
+  if(head != NULL) {
+    
+    //1. if head in not null and next of head
+    //   is null, release the head
+    if(head->next == NULL) {
+      head = NULL;
+    } else {
+      
+        //2. Else, traverse to the second last 
+        //   element of the list
+        struct Node *temp = head;
+        while(temp->next->next != NULL)
+            temp = temp->next;
+        
+        //3. Change the next of the second 
+        //   last node to null and delete the
+        //   last node
+        struct Node *lastNode = temp->next;
+        temp->next = NULL;
+        free(lastNode); 
+    }
+  }
+}
+
+void deleteNode(struct Node** head_ref, struct Node* del)
+{
+    /* base case */
+    if (*head_ref == NULL || del == NULL)
+        return;
+  
+    /* If node to be deleted is head node */
+    if (*head_ref == del)
+        *head_ref = del->next;
+  
+    /* Change next only if node to be deleted is NOT the last node */
+    if (del->next != NULL)
+        del->next->prev = del->prev;
+  
+    /* Change prev only if node to be deleted is NOT the first node */
+    if (del->prev != NULL)
+        del->prev->next = del->next;
+  
+    /* Finally, free the memory occupied by del*/
+    free(del);
+    return;
+}
+
 void appendLast(struct Node** head_ref, unsigned int new_data)
 {
     struct Node* new_node
@@ -162,6 +210,29 @@ void appendLast(struct Node** head_ref, unsigned int new_data)
     new_node->prev = last;
  
     return;
+}
+
+void appendFist(struct Node** head_ref, int new_data)
+{
+    /* allocate node */
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+  
+    /* put in the data  */
+    new_node->data = new_data;
+  
+    /* since we are adding at the beginning,
+    prev is always NULL */
+    new_node->prev = NULL;
+  
+    /* link the old list of the new node */
+    new_node->next = (*head_ref);
+  
+    /* change prev of head node to new node */
+    if ((*head_ref) != NULL)
+        (*head_ref)->prev = new_node;
+  
+    /* move the head to point to the new node */
+    (*head_ref) = new_node;
 }
 
 void printList(struct Node* node)
@@ -244,6 +315,79 @@ void fifo(char operation,unsigned int i){
     totalCount++;
 }
 
+void lru(char operation,unsigned int i){
+    //printf ("%c %d", operation, i);
+    char y = 'r';
+    char z = 'w';
+    if(operation == y){
+        countRead++;
+        struct Node* last;
+        struct Node* temp;
+        temp = head;
+        int flag = 0;
+        while (temp != NULL) {
+            //printf("%x ", temp->data);
+            if(temp->data == i){
+                flag = 1;
+                deleteNode(&head,temp);
+                appendFist(&head,i);
+                break;
+            }
+            last = temp;
+            temp = temp->next;
+        }
+        if(flag == 1){
+            printf("Total Count: %d + Read Hit\n", totalCount);
+            readHit++;
+        }
+        else {
+            printf("Total Count: %d + Read Miss\n", totalCount);
+            readMiss++;
+            if(length() < 64){
+                appendFist(&head, i);
+            }
+            else{
+                deleteLast();
+                appendFist(&head, i);
+            }
+        }
+    }
+    if(operation == z){
+        countWrite++;
+        struct Node* last;
+        struct Node* temp;
+        temp = head;
+        int flag = 0;
+        while (temp != NULL) {
+            //printf("%x ", temp->data);
+            if(temp->data == i){
+                flag = 1;
+                deleteNode(&head,temp);
+                appendFist(&head,i);
+                break;
+            }
+            last = temp;
+            temp = temp->next;
+        }
+        if(flag == 1){
+            writeHit++;
+            printf("Total Count: %d + Write Hit\n", totalCount);
+        }
+        else {
+            writeMiss++;
+            printf("Total Count: %d + Write Miss\n", totalCount);
+            if(length() < 64){
+                appendFist(&head, i);
+            }
+            else{
+                deleteLast();
+                appendFist(&head, i);
+            }
+        }
+    }
+    totalCount++;
+}
+
 void printFile(FILE *trace_file_open) {
     //unsigned int c;
     char operation;
@@ -254,7 +398,7 @@ void printFile(FILE *trace_file_open) {
     while (!feof(trace_file_open))
     {
         //printf ("%c %x\n",operation, i & (0xfffffff0));
-        fifo(operation, i & (0xfffffff0));
+        lru(operation, i & (0xfffffff0));
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
     fifo(operation, i & (0xfffffff0));
