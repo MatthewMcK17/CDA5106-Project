@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "simulator.h"
 
@@ -123,12 +124,14 @@ void beginning_delete()  {
     }  
     else if(head->next == NULL)  
     {  
+        printf("L1 victim:%x",head->data);
         head = NULL;   
         free(head);  
         printf("\nNode Deleted\n");  
     }  
     else  
     {  
+        printf("L1 victim:%x",head->data);
         ptr = head;  
         head = head -> next;  
         head -> prev = NULL;  
@@ -266,11 +269,11 @@ void fifo(char operation,unsigned int i){
             temp = temp->next;
         }
         if(flag == 1){
-            printf("Total Count: %d + Read Hit\n", totalCount);
+            printf("Total Count: %d + Read Hit ", totalCount);
             readHit++;
         }
         else {
-            printf("Total Count: %d + Read Miss\n", totalCount);
+            printf("Total Count: %d + Read Miss ", totalCount);
             readMiss++;
             if(length() < 64){
                 appendLast(&head, i);
@@ -298,11 +301,11 @@ void fifo(char operation,unsigned int i){
         }
         if(flag == 1){
             writeHit++;
-            printf("Total Count: %d + Write Hit\n", totalCount);
+            printf("Total Count: %d + Write Hit ", totalCount);
         }
         else {
             writeMiss++;
-            printf("Total Count: %d + Write Miss\n", totalCount);
+            printf("Total Count: %d + Write Miss ", totalCount);
             if(length() < 64){
                 appendLast(&head, i);
             }
@@ -314,6 +317,45 @@ void fifo(char operation,unsigned int i){
     }
     totalCount++;
 }
+
+/*void fifo(char operation, unsigned int i){
+    char y = 'r';
+    char z = 'w';
+    struct Node* last;
+    struct Node* temp;
+    temp = head;
+    int flag = 0;
+    while (temp != NULL) {
+        //printf("%x ", temp->data);
+        if(temp->data == i){
+            flag = 1;
+            break;
+        }
+        last = temp;
+        temp = temp->next;
+    }
+    if(flag == 1){
+        printf("Total Count: %d + Hit\n", totalCount);
+        readHit++;
+    }
+    else {
+        if(operation == y){
+            readMiss++;
+            printf("Total Count: %d + Read Miss\n", totalCount);
+        }
+        if(operation == z){
+            writeMiss++;
+            printf("Total Count: %d + Write Miss\n", totalCount);
+        }
+        if(length() < 64){
+            appendLast(&head, i);
+        }
+        else{
+            beginning_delete();
+            appendLast(&head, i);
+        }
+    }
+}*/
 
 void lru(char operation,unsigned int i){
     //printf ("%c %d", operation, i);
@@ -388,17 +430,30 @@ void lru(char operation,unsigned int i){
     totalCount++;
 }
 
+void printTagIndex(unsigned int i){
+    int sets = l1_size / (l1_assoc * block_size);
+    int offsetSize = log2(block_size);
+    int indexSize = log2(sets);
+    int sizeInBits = sizeof(offsetSize) * 8;
+    i = i >> offsetSize;
+    printf("(index: %d, ", i & (int)(pow(2,indexSize)-1));
+    i = i >> indexSize;
+    printf("tag: %x)\n", i & (int)(pow(2,32-indexSize-offsetSize)-1));
+}
+
 void printFile(FILE *trace_file_open) {
     //unsigned int c;
     char operation;
     unsigned int i;
     //char *i[10];
-    fscanf(trace_file_open, "%c %x ", &operation, &i);
+    fscanf(trace_file_open, "%c %08x ", &operation, &i);
 
     while (!feof(trace_file_open))
     {
-        //printf ("%c %x\n",operation, i & (0xfffffff0));
-        lru(operation, i & (0xfffffff0));
+        //printf ("%c %08x\n",operation, i & (0xfffffff0));
+        //printf ("%c %d\n",operation, (i >> 4) & (0x1f));
+        fifo(operation, i & (0xfffffff0));
+        printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
     fifo(operation, i & (0xfffffff0));
