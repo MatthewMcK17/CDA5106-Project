@@ -451,7 +451,6 @@ void printFile(FILE *trace_file_open) {
     while (!feof(trace_file_open))
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
-        //printf ("%c %d\n",operation, (i >> 4) & (0x1f));
         fifo(operation, i & (0xfffffff0));
         printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &i);
