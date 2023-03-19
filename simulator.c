@@ -116,7 +116,7 @@ int length() {
    return length;
 }
 
-void beginning_delete()  {  
+void deleteFirst()  {  
     struct Node *ptr;  
     if(head == NULL)  
     {  
@@ -279,7 +279,7 @@ void fifo(char operation,unsigned int i){
                 appendLast(&head, i);
             }
             else{
-                beginning_delete();
+                deleteFirst();
                 appendLast(&head, i);
             }
         }
@@ -310,7 +310,7 @@ void fifo(char operation,unsigned int i){
                 appendLast(&head, i);
             }
             else{
-                beginning_delete();
+                deleteFirst();
                 appendLast(&head, i);
             }
         }
@@ -351,7 +351,7 @@ void fifo(char operation,unsigned int i){
             appendLast(&head, i);
         }
         else{
-            beginning_delete();
+            deleteFirst();
             appendLast(&head, i);
         }
     }
