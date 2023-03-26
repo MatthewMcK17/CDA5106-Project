@@ -1,58 +1,41 @@
 #include <stdlib.h>
 
 #define DEBUG 1
-#define OUTPUT_FILE_SIZE 30
-#define DISPATCH_SIZE 12
-#define ISSUE_SIZE 12
-#define EXECUTE_SIZE 12
+#define MAX 0xFFFFFFFF
+#define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
 
-typedef enum{LRU, FIFO, foroptimal} Replacement;
-typedef enum{noninclusive, inclusive} Inclusion;
+typedef enum Replacement {LRU, FIFO, foroptimal} Replacement;
+typedef enum Inclusion {noninclusive, inclusive} Inclusion;
+typedef unsigned int uint;
+typedef struct Block Block;
+typedef struct Cache Cache;
+typedef struct Set Set;
 
-typedef struct instruction instruction;
-typedef struct instruction_queue instruction_queue;
-typedef struct fake_ROB fake_ROB;
-typedef struct dispatch_list dispatch_list;
-typedef struct issue_list issue_list;
-typedef struct execute_list execute_list;
-
-struct instruction {
-    int state;
-    int seq_num;
-    int PC;
-    int opcode;
-    int dst;
-    int src1;
-    int src2;
+struct Block {
+    Block *next;
+    Block *prev;
+    uint tag;
+    int dirty;
 };
 
-struct instruction_queue {
+struct Set {
+    Block *head;
+    Block *tail;
     int size;
 };
 
-struct fake_ROB {
-    int size;
+struct Cache {
+    Set **cache;
 };
 
-struct dispatch_list {
-    int size;
-};
-
-struct issue_list {
-    int size;
-};
-
-struct execute_list {
-    int size;
-};
-
-void usage();
-void free_all(dispatch_list *, issue_list *, execute_list *);
-
-void FakeRetire();
-void Execute();
-void Issue();
-void Dispatch();
-void Fetch();
-int Advance_Cycle();
 void printInput();
+void fifo(char, uint);
+void lru(char, uint);
+void printFile(FILE *trace_file_open);
+void usage();
+void init();
+Block *find_block(Set *, uint);
+void append_block(Set *, uint);
+void move_to_tail(Set *,Block *);
+void remove_head(Set *);
+void free_everything();
