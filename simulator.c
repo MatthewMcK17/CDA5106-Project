@@ -419,7 +419,10 @@ void printFile(FILE *trace_file_open) {
     int index = i & (int)(pow(2,indexSize)-1);
     x = x >> indexSize;
     fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
-    printf("\n");
+    printf("===== L1 contents =====\n");
+    for (int x = 0; x < 32; x++){
+        printf("Set\t%d:\t%x\t%x\n",x,matrix[x][0],matrix[x][1]);
+    }
     //printList(head);
     printf("===== Simulation results (raw) =====\n");
     printf("a. number of L1 reads: %d\n", countRead);
