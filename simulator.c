@@ -315,77 +315,78 @@ void fifo(char operation,unsigned int tag, int index){
     //printf("tag: %x\n", i);
 }
 
-void lru(char operation,unsigned int i){
-    //printf ("%c %d", operation, i);
+void lru(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
     if(operation == y){
         countRead++;
-        struct Node* last;
-        struct Node* temp;
-        temp = head;
-        int flag = 0;
-        while (temp != NULL) {
-            //printf("%x ", temp->data);
-            if(temp->data == i){
-                flag = 1;
-                deleteNode(&head,temp);
-                appendFist(&head,i);
-                break;
-            }
-            last = temp;
-            temp = temp->next;
-        }
-        if(flag == 1){
-            printf("Total Count: %d + Read Hit\n", totalCount);
-            readHit++;
-        }
-        else {
-            printf("Total Count: %d + Read Miss\n", totalCount);
-            readMiss++;
-            if(length() < 64){
-                appendFist(&head, i);
-            }
-            else{
-                deleteLast();
-                appendFist(&head, i);
-            }
-        }
     }
     if(operation == z){
         countWrite++;
-        struct Node* last;
-        struct Node* temp;
-        temp = head;
-        int flag = 0;
-        while (temp != NULL) {
-            //printf("%x ", temp->data);
-            if(temp->data == i){
-                flag = 1;
-                deleteNode(&head,temp);
-                appendFist(&head,i);
-                break;
+    }
+    /*for(int x = 0; x < 32; x++){
+        matrix[x][0] = 0;
+        matrix[x][1] = 0;
+    }*/
+    /*for(int x = 0; x < 32; x++){
+        printf("%x ",matrix[x][0]);
+        printf("%x ",matrix[x][1]);
+    }*/
+    //printf("\n");
+    printf("%d: (index: %d, ",totalCount++, index);
+    //printf("tag: %x)\n", i);
+    printf("tag: %x)\n", tag);
+    printf("matrix 1: %x\n", matrix[index][0]);
+    printf("matrix 2: %x\n", matrix[index][1]);
+    if(matrix[index][0] == tag || matrix[index][1] == tag){
+        if(operation == y){
+            readHit++;
+            if(matrix[index][0] == tag){
+                unsigned int temp = matrix[index][0];
+                int temp2 = matrix2[index][0];
+                matrix[index][0] = matrix[index][1];
+                matrix2[index][0] = matrix2[index][1];
+                matrix[index][1] = temp;
+                matrix2[index][1] = temp2;
             }
-            last = temp;
-            temp = temp->next;
         }
-        if(flag == 1){
+        if(operation == z){
             writeHit++;
-            printf("Total Count: %d + Write Hit\n", totalCount);
-        }
-        else {
-            writeMiss++;
-            printf("Total Count: %d + Write Miss\n", totalCount);
-            if(length() < 64){
-                appendFist(&head, i);
+            if(matrix[index][0] == tag){
+                unsigned int temp = matrix[index][0];
+                int temp2 = matrix2[index][0];
+                matrix[index][0] = matrix[index][1];
+                matrix2[index][0] = matrix2[index][1];
+                matrix[index][1] = temp;
+                matrix2[index][0] = 1;
             }
-            else{
-                deleteLast();
-                appendFist(&head, i);
+            if(matrix[index][1] == tag){
+                matrix2[index][1] = 1;
             }
         }
     }
-    totalCount++;
+    else{
+        if(matrix2[index][0] == 1){
+            writeback++;
+        }
+        matrix[index][0] = matrix[index][1];
+        matrix[index][1] = tag;
+        matrix2[index][0] = matrix2[index][1];
+        if(operation == y){
+            readMiss++;
+            if(matrix[index][0] == tag){
+                matrix2[index][0] = 0;
+            }
+            if(matrix[index][1] == tag){
+                matrix2[index][1] = 0;
+            }
+        }
+        if(operation == z){
+            writeMiss++;
+            matrix2[index][0] = 1;
+        }
+    }
+    //printf("tag: %x\n", i);
 }
 
 void printTagIndex(unsigned int i){
@@ -453,30 +454,6 @@ void printFile(FILE *trace_file_open) {
     printf("f. number of L1 writebacks: %d\n", writeback);
     printf("g. number of L2 reads:        0\nh. number of L2 read misses:  0\ni. number of L2 writes:       0\nj. number of L2 write misses: 0\nk. L2 miss rate:              0\nl. number of L2 writebacks:   0\n");
     printf("m. total memory traffic: %d\n", 0);
-}
-
-void FakeRetire() {
-
-}
-
-void Execute() {
-
-}
-
-void Issue() {
-
-}
-
-void Dispatch() {
-
-}
-
-void Fetch() {
-
-}
-
-int Advance_Cycle() {
-
 }
 
 void free_all(dispatch_list *dis, issue_list *iss, execute_list *exec) {

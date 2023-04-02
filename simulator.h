@@ -49,11 +49,5 @@ struct execute_list {
 void usage();
 void free_all(dispatch_list *, issue_list *, execute_list *);
 
-void FakeRetire();
-void Execute();
-void Issue();
-void Dispatch();
-void Fetch();
-int Advance_Cycle();
 void printInput();
 void printFile();
