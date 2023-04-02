@@ -110,150 +110,6 @@ void printInput() {
     printf("trace_file: %s\n", trace_file);
 }
 
-int length() {
-   int length = 0;
-   struct Node *current;
-	
-   for(current = head; current != NULL; current = current->next){
-      length++;
-   }
-	
-   return length;
-}
-
-void deleteFirst()  {  
-    struct Node *ptr;  
-    if(head == NULL)  
-    {  
-        printf("\n UNDERFLOW\n");  
-    }  
-    else if(head->next == NULL)  
-    {  
-        printf("L1 victim:%x",head->data);
-        head = NULL;   
-        free(head);  
-        printf("\nNode Deleted\n");  
-    }  
-    else  
-    {  
-        printf("L1 victim:%x",head->data);
-        ptr = head;  
-        head = head -> next;  
-        head -> prev = NULL;  
-        free(ptr);  
-        printf("\nNode Deleted\n");  
-    }  
-}
-
-void deleteLast() {
-  if(head != NULL) {
-    
-    //1. if head in not null and next of head
-    //   is null, release the head
-    if(head->next == NULL) {
-      head = NULL;
-    } else {
-      
-        //2. Else, traverse to the second last 
-        //   element of the list
-        struct Node *temp = head;
-        while(temp->next->next != NULL)
-            temp = temp->next;
-        
-        //3. Change the next of the second 
-        //   last node to null and delete the
-        //   last node
-        struct Node *lastNode = temp->next;
-        temp->next = NULL;
-        free(lastNode); 
-    }
-  }
-}
-
-void deleteNode(struct Node** head_ref, struct Node* del)
-{
-    /* base case */
-    if (*head_ref == NULL || del == NULL)
-        return;
-  
-    /* If node to be deleted is head node */
-    if (*head_ref == del)
-        *head_ref = del->next;
-  
-    /* Change next only if node to be deleted is NOT the last node */
-    if (del->next != NULL)
-        del->next->prev = del->prev;
-  
-    /* Change prev only if node to be deleted is NOT the first node */
-    if (del->prev != NULL)
-        del->prev->next = del->next;
-  
-    /* Finally, free the memory occupied by del*/
-    free(del);
-    return;
-}
-
-void appendLast(struct Node** head_ref, unsigned int new_data)
-{
-    struct Node* new_node
-        = (struct Node*)malloc(sizeof(struct Node));
- 
-    struct Node* last = *head_ref; 
- 
-    new_node->data = new_data;
- 
-    new_node->next = NULL;
- 
-    if (*head_ref == NULL) {
-        new_node->prev = NULL;
-        *head_ref = new_node;
-        return;
-    }
- 
-    while (last->next != NULL)
-        last = last->next;
-    
-    last->next = new_node;
- 
-    new_node->prev = last;
- 
-    return;
-}
-
-void appendFist(struct Node** head_ref, int new_data)
-{
-    /* allocate node */
-    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
-  
-    /* put in the data  */
-    new_node->data = new_data;
-  
-    /* since we are adding at the beginning,
-    prev is always NULL */
-    new_node->prev = NULL;
-  
-    /* link the old list of the new node */
-    new_node->next = (*head_ref);
-  
-    /* change prev of head node to new node */
-    if ((*head_ref) != NULL)
-        (*head_ref)->prev = new_node;
-  
-    /* move the head to point to the new node */
-    (*head_ref) = new_node;
-}
-
-void printList(struct Node* node)
-{
-    struct Node* last;
-    printf("\nTraversal in forward direction \n");
-    while (node != NULL) {
-        printf("%x ", node->data);
-        last = node;
-        node = node->next;
-    }
-}
-
 void fifo(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
@@ -410,10 +266,8 @@ int returnTagIndex(unsigned int i){
 }
 
 void printFile(FILE *trace_file_open) {
-    //unsigned int c;
     char operation;
     unsigned int i;
-    //char *i[10];
     fscanf(trace_file_open, "%c %08x ", &operation, &i);
 
     while (!feof(trace_file_open))
@@ -444,7 +298,6 @@ void printFile(FILE *trace_file_open) {
     for (int x = 0; x < 32; x++){
         printf("Set\t%d:\t%x  %d\t%x  %d\n",x,matrix[x][0],matrix2[x][0],matrix[x][1],matrix2[x][1]);
     }
-    //printList(head);
     printf("===== Simulation results (raw) =====\n");
     printf("a. number of L1 reads: %d\n", countRead);
     printf("b. number of L1 read misses: %d\n", readMiss);
