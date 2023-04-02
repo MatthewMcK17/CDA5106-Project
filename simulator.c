@@ -35,7 +35,10 @@ int writeMiss = 0;
 
 int totalCount = 1;
 
+int writeback = 0;
+
 unsigned int matrix[32][2];
+int matrix2[32][2];
 
 int main(int argc, char *argv[]) {
     FILE *trace_file_open;
@@ -255,8 +258,8 @@ void fifo(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
     if(operation == y){
-            countRead++;
-        }
+        countRead++;
+    }
     if(operation == z){
         countWrite++;
     }
@@ -280,16 +283,33 @@ void fifo(char operation,unsigned int tag, int index){
         }
         if(operation == z){
             writeHit++;
+            if(matrix[index][0] == tag){
+                matrix2[index][0] = 1;
+            }
+            if(matrix[index][1] == tag){
+                matrix2[index][1] = 1;
+            }
         }
     }
     else{
+        if(matrix2[index][0] == 1){
+            writeback++;
+        }
         matrix[index][0] = matrix[index][1];
         matrix[index][1] = tag;
+        matrix2[index][0] = matrix2[index][1];
         if(operation == y){
             readMiss++;
+            if(matrix[index][0] == tag){
+                matrix2[index][0] = 0;
+            }
+            if(matrix[index][1] == tag){
+                matrix2[index][1] = 0;
+            }
         }
         if(operation == z){
             writeMiss++;
+            matrix2[index][1] = 1;
         }
     }
     //printf("tag: %x\n", i);
@@ -421,7 +441,7 @@ void printFile(FILE *trace_file_open) {
     fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
     printf("===== L1 contents =====\n");
     for (int x = 0; x < 32; x++){
-        printf("Set\t%d:\t%x\t%x\n",x,matrix[x][0],matrix[x][1]);
+        printf("Set\t%d:\t%x  %d\t%x  %d\n",x,matrix[x][0],matrix2[x][0],matrix[x][1],matrix2[x][1]);
     }
     //printList(head);
     printf("===== Simulation results (raw) =====\n");
@@ -429,6 +449,10 @@ void printFile(FILE *trace_file_open) {
     printf("b. number of L1 read misses: %d\n", readMiss);
     printf("c. number of L1 writes: %d\n", countWrite);
     printf("d. number of L1 write misses: %d\n", writeMiss);
+    printf("e. L1 miss rate: %f\n", (float)(readMiss + writeMiss)/100000);
+    printf("f. number of L1 writebacks: %d\n", writeback);
+    printf("g. number of L2 reads:        0\nh. number of L2 read misses:  0\ni. number of L2 writes:       0\nj. number of L2 write misses: 0\nk. L2 miss rate:              0\nl. number of L2 writebacks:   0\n");
+    printf("m. total memory traffic: %d\n", 0);
 }
 
 void FakeRetire() {
