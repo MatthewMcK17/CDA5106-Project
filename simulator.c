@@ -453,7 +453,7 @@ void printFile(FILE *trace_file_open) {
     printf("e. L1 miss rate: %f\n", (float)(readMiss + writeMiss)/100000);
     printf("f. number of L1 writebacks: %d\n", writeback);
     printf("g. number of L2 reads:        0\nh. number of L2 read misses:  0\ni. number of L2 writes:       0\nj. number of L2 write misses: 0\nk. L2 miss rate:              0\nl. number of L2 writebacks:   0\n");
-    printf("m. total memory traffic: %d\n", 0);
+    printf("m. total memory traffic: %d\n", readMiss + writeMiss + writeback);
 }
 
 void free_all(dispatch_list *dis, issue_list *iss, execute_list *exec) {
