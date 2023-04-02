@@ -35,6 +35,8 @@ int writeMiss = 0;
 
 int totalCount = 1;
 
+unsigned int matrix[32][2];
+
 int main(int argc, char *argv[]) {
     FILE *trace_file_open;
     if (argc != 9) {
@@ -249,113 +251,49 @@ void printList(struct Node* node)
     }
 }
 
-void fifo(char operation,unsigned int i){
-    //printf ("%c %d", operation, i);
+void fifo(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
     if(operation == y){
-        countRead++;
-        struct Node* last;
-        struct Node* temp;
-        temp = head;
-        int flag = 0;
-        while (temp != NULL) {
-            //printf("%x ", temp->data);
-            if(temp->data == i){
-                flag = 1;
-                break;
-            }
-            last = temp;
-            temp = temp->next;
+            countRead++;
         }
-        if(flag == 1){
-            printf("Total Count: %d + Read Hit ", totalCount);
-            readHit++;
-        }
-        else {
-            printf("Total Count: %d + Read Miss ", totalCount);
-            readMiss++;
-            if(length() < 64){
-                appendLast(&head, i);
-            }
-            else{
-                deleteFirst();
-                appendLast(&head, i);
-            }
-        }
-    }
     if(operation == z){
         countWrite++;
-        struct Node* last;
-        struct Node* temp;
-        temp = head;
-        int flag = 0;
-        while (temp != NULL) {
-            //printf("%x ", temp->data);
-            if(temp->data == i){
-                flag = 1;
-                break;
-            }
-            last = temp;
-            temp = temp->next;
+    }
+    /*for(int x = 0; x < 32; x++){
+        matrix[x][0] = 0;
+        matrix[x][1] = 0;
+    }*/
+    /*for(int x = 0; x < 32; x++){
+        printf("%x ",matrix[x][0]);
+        printf("%x ",matrix[x][1]);
+    }*/
+    //printf("\n");
+    printf("%d: (index: %d, ",totalCount++, index);
+    //printf("tag: %x)\n", i);
+    printf("tag: %x)\n", tag);
+    printf("matrix 1: %x\n", matrix[index][0]);
+    printf("matrix 2: %x\n", matrix[index][1]);
+    if(matrix[index][0] == tag || matrix[index][1] == tag){
+        if(operation == y){
+            readHit++;
         }
-        if(flag == 1){
+        if(operation == z){
             writeHit++;
-            printf("Total Count: %d + Write Hit ", totalCount);
-        }
-        else {
-            writeMiss++;
-            printf("Total Count: %d + Write Miss ", totalCount);
-            if(length() < 64){
-                appendLast(&head, i);
-            }
-            else{
-                deleteFirst();
-                appendLast(&head, i);
-            }
         }
     }
-    totalCount++;
-}
-
-/*void fifo(char operation, unsigned int i){
-    char y = 'r';
-    char z = 'w';
-    struct Node* last;
-    struct Node* temp;
-    temp = head;
-    int flag = 0;
-    while (temp != NULL) {
-        //printf("%x ", temp->data);
-        if(temp->data == i){
-            flag = 1;
-            break;
-        }
-        last = temp;
-        temp = temp->next;
-    }
-    if(flag == 1){
-        printf("Total Count: %d + Hit\n", totalCount);
-        readHit++;
-    }
-    else {
+    else{
+        matrix[index][0] = matrix[index][1];
+        matrix[index][1] = tag;
         if(operation == y){
             readMiss++;
-            printf("Total Count: %d + Read Miss\n", totalCount);
         }
         if(operation == z){
             writeMiss++;
-            printf("Total Count: %d + Write Miss\n", totalCount);
-        }
-        if(length() < 64){
-            appendLast(&head, i);
-        }
-        else{
-            deleteFirst();
-            appendLast(&head, i);
         }
     }
-}*/
+    //printf("tag: %x\n", i);
+}
 
 void lru(char operation,unsigned int i){
     //printf ("%c %d", operation, i);
@@ -441,6 +379,15 @@ void printTagIndex(unsigned int i){
     printf("tag: %x)\n", i & (int)(pow(2,32-indexSize-offsetSize)-1));
 }
 
+int returnTagIndex(unsigned int i){
+    int sets = l1_size / (l1_assoc * block_size);
+    int offsetSize = log2(block_size);
+    int indexSize = log2(sets);
+    int sizeInBits = sizeof(offsetSize) * 8;
+    i = i >> offsetSize;
+    return i & (int)(pow(2,indexSize)-1);
+}
+
 void printFile(FILE *trace_file_open) {
     //unsigned int c;
     char operation;
@@ -451,18 +398,34 @@ void printFile(FILE *trace_file_open) {
     while (!feof(trace_file_open))
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
-        fifo(operation, i & (0xfffffff0));
-        printTagIndex(i);
+        int sets = l1_size / (l1_assoc * block_size);
+        int offsetSize = log2(block_size);
+        int indexSize = log2(sets);
+        int sizeInBits = sizeof(offsetSize) * 8;
+        unsigned int x = i;
+        x = x >> offsetSize;
+        int index = i & (int)(pow(2,indexSize)-1);
+        x = x >> indexSize;
+        fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+        //printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
-    fifo(operation, i & (0xfffffff0));
+    int sets = l1_size / (l1_assoc * block_size);
+    int offsetSize = log2(block_size);
+    int indexSize = log2(sets);
+    int sizeInBits = sizeof(offsetSize) * 8;
+    unsigned int x = i;
+    x = x >> offsetSize;
+    int index = i & (int)(pow(2,indexSize)-1);
+    x = x >> indexSize;
+    fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
     printf("\n");
     //printList(head);
     printf("===== Simulation results (raw) =====\n");
     printf("a. number of L1 reads: %d\n", countRead);
-    printf("b. number of L1 read misses: %d\n", readMiss + 1);
+    printf("b. number of L1 read misses: %d\n", readMiss);
     printf("c. number of L1 writes: %d\n", countWrite);
-    printf("d. number of L1 write misses: %d\n", writeMiss + 1);
+    printf("d. number of L1 write misses: %d\n", writeMiss);
 }
 
 void FakeRetire() {
