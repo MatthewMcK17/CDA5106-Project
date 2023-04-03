@@ -36,7 +36,6 @@ int writeMiss = 0;
 int totalCount = 1;
 
 int writeback = 0;
-
 unsigned int matrix[32][2];
 int matrix2[32][2];
 
@@ -214,7 +213,7 @@ void lru(char operation,unsigned int tag, int index){
                 matrix[index][0] = matrix[index][1];
                 matrix2[index][0] = matrix2[index][1];
                 matrix[index][1] = temp;
-                matrix2[index][0] = 1;
+                matrix2[index][1] = 1;
             }
             if(matrix[index][1] == tag){
                 matrix2[index][1] = 1;
@@ -239,7 +238,7 @@ void lru(char operation,unsigned int tag, int index){
         }
         if(operation == z){
             writeMiss++;
-            matrix2[index][0] = 1;
+            matrix2[index][1] = 1;
         }
     }
     //printf("tag: %x\n", i);
@@ -281,7 +280,8 @@ void printFile(FILE *trace_file_open) {
         x = x >> offsetSize;
         int index = i & (int)(pow(2,indexSize)-1);
         x = x >> indexSize;
-        fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+        //fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+        lru(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
         //printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &i);
     }
@@ -293,7 +293,8 @@ void printFile(FILE *trace_file_open) {
     x = x >> offsetSize;
     int index = i & (int)(pow(2,indexSize)-1);
     x = x >> indexSize;
-    fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+    //fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+    lru(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
     printf("===== L1 contents =====\n");
     for (int x = 0; x < 32; x++){
         printf("Set\t%d:\t%x  %d\t%x  %d\n",x,matrix[x][0],matrix2[x][0],matrix[x][1],matrix2[x][1]);
