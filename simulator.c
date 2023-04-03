@@ -16,14 +16,13 @@ char *trace_file;
 typedef long unsigned int mem_addr;
 mem_addr addr;
 
-struct Node {
-    unsigned int data;
-    struct Node* next;
-    struct Node* prev;
+struct Block {
+    unsigned int addr;
+    unsigned int tag;
+    char dirty;
+    int replacementCount;
 };
-
-struct Node *head = NULL;
-struct Node *last = NULL;
+typedef struct Block Block;
 
 int countRead = 0;
 int countWrite = 0;
@@ -36,8 +35,9 @@ int writeMiss = 0;
 int totalCount = 1;
 
 int writeback = 0;
-unsigned int matrix[32][2];
-int matrix2[32][2];
+Block matrix[32][2];
+
+int fifoCount = 0;
 
 int main(int argc, char *argv[]) {
     FILE *trace_file_open;
@@ -109,7 +109,44 @@ void printInput() {
     printf("trace_file: %s\n", trace_file);
 }
 
-void fifo(char operation,unsigned int tag, int index){
+void fifoFunction(unsigned int tag, int index){
+    int smallest = 9999999;
+    int smallestIndex = 0;
+    for(int x = 0; x < l1_assoc; x++){
+        if(matrix[index][x].replacementCount < smallest){
+            smallest = matrix[index][x].replacementCount;
+            smallestIndex = x;
+        }
+    }
+    if(matrix[index][smallestIndex].dirty == 'D'){
+        writeback++;
+    }
+    matrix[index][smallestIndex].tag = tag;
+    matrix[index][smallestIndex].replacementCount = fifoCount++;
+}
+
+void lruFunction(unsigned int tag, int index){
+    int biggest = -1;
+    int biggestIndex = 0;
+    for(int x = 0; x < l1_assoc; x++){
+        if(matrix[index][x].replacementCount > biggest){
+            biggest = matrix[index][x].replacementCount;
+            biggestIndex = x;
+        }
+    }
+    if(matrix[index][biggestIndex].dirty == 'D'){
+        writeback++;
+    }
+    matrix[index][biggestIndex].tag = tag;
+    matrix[index][biggestIndex].replacementCount = 0;
+    for(int x = 0; x < l1_assoc; x++){
+        if(matrix[index][x].tag != tag){
+            matrix[index][x].replacementCount += 1;
+        }
+    }
+}
+
+void l1Cache(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
     if(operation == y){
@@ -118,59 +155,101 @@ void fifo(char operation,unsigned int tag, int index){
     if(operation == z){
         countWrite++;
     }
-    /*for(int x = 0; x < 32; x++){
-        matrix[x][0] = 0;
-        matrix[x][1] = 0;
-    }*/
-    /*for(int x = 0; x < 32; x++){
-        printf("%x ",matrix[x][0]);
-        printf("%x ",matrix[x][1]);
-    }*/
-    //printf("\n");
     printf("%d: (index: %d, ",totalCount++, index);
     //printf("tag: %x)\n", i);
     printf("tag: %x)\n", tag);
-    printf("matrix 1: %x\n", matrix[index][0]);
-    printf("matrix 2: %x\n", matrix[index][1]);
-    if(matrix[index][0] == tag || matrix[index][1] == tag){
+    printf("matrix 1: %x\n", matrix[index][0].tag);
+    printf("matrix 2: %x\n", matrix[index][1].tag);
+    int flag = 0;
+    for(int x = 0; x < l1_assoc; x++){
+        if(matrix[index][x].tag == tag){
+            flag = 1;
+        }
+    }
+    if(flag){
         if(operation == y){
             readHit++;
+            if(replacement_policy == 0){
+                for(int x = 0; x < l1_assoc; x++){
+                    if(matrix[index][x].tag == tag){
+                        matrix[index][x].replacementCount = 0;
+                    }
+                    else{
+                        matrix[index][x].replacementCount += 1;
+                    }
+                }
+            }
         }
         if(operation == z){
             writeHit++;
-            if(matrix[index][0] == tag){
-                matrix2[index][0] = 1;
+            for(int x = 0; x < l1_assoc; x++){
+                if(matrix[index][x].tag == tag){
+                    matrix[index][x].dirty = 'D';
+                }
             }
-            if(matrix[index][1] == tag){
-                matrix2[index][1] = 1;
+            if(replacement_policy == 0){
+                for(int x = 0; x < l1_assoc; x++){
+                    if(matrix[index][x].tag == tag){
+                        matrix[index][x].replacementCount = 0;
+                    }
+                    else{
+                        matrix[index][x].replacementCount += 1;
+                    }
+                }
             }
         }
     }
     else{
-        if(matrix2[index][0] == 1){
-            writeback++;
+        int emptyPlacement = 0;
+        for(int x = 0; x < l1_assoc; x++){
+            if(matrix[index][x].tag == 0){
+                matrix[index][x].tag = tag;
+                if(replacement_policy == 1){
+                    matrix[index][x].replacementCount = fifoCount++;
+                }
+                emptyPlacement = 1;
+                break;
+            }
         }
-        matrix[index][0] = matrix[index][1];
-        matrix[index][1] = tag;
-        matrix2[index][0] = matrix2[index][1];
+        if(!emptyPlacement){
+            if(replacement_policy == 0){
+                lruFunction(tag,index);
+            }
+            if(replacement_policy == 1){
+                fifoFunction(tag,index);
+            }
+        } else{
+            if(replacement_policy == 0){
+                for(int x = 0; x < l1_assoc; x++){
+                    if(matrix[index][x].tag == tag){
+                        matrix[index][x].replacementCount = 0;
+                    }
+                    else{
+                        matrix[index][x].replacementCount += 1;
+                    }
+                }
+            }
+        }
         if(operation == y){
             readMiss++;
-            if(matrix[index][0] == tag){
-                matrix2[index][0] = 0;
-            }
-            if(matrix[index][1] == tag){
-                matrix2[index][1] = 0;
+            for(int x = 0; x < l1_assoc; x++){
+                if(matrix[index][x].tag == tag){
+                    matrix[index][x].dirty = ' ';
+                }
             }
         }
         if(operation == z){
             writeMiss++;
-            matrix2[index][1] = 1;
+            for(int x = 0; x < l1_assoc; x++){
+                if(matrix[index][x].tag == tag){
+                    matrix[index][x].dirty = 'D';
+                }
+            }
         }
     }
-    //printf("tag: %x\n", i);
 }
 
-void lru(char operation,unsigned int tag, int index){
+/*void lru(char operation,unsigned int tag, int index){
     char y = 'r';
     char z = 'w';
     if(operation == y){
@@ -182,11 +261,11 @@ void lru(char operation,unsigned int tag, int index){
     /*for(int x = 0; x < 32; x++){
         matrix[x][0] = 0;
         matrix[x][1] = 0;
-    }*/
+    }
     /*for(int x = 0; x < 32; x++){
         printf("%x ",matrix[x][0]);
         printf("%x ",matrix[x][1]);
-    }*/
+    }
     //printf("\n");
     printf("%d: (index: %d, ",totalCount++, index);
     //printf("tag: %x)\n", i);
@@ -242,7 +321,7 @@ void lru(char operation,unsigned int tag, int index){
         }
     }
     //printf("tag: %x\n", i);
-}
+}*/
 
 void printTagIndex(unsigned int i){
     int sets = l1_size / (l1_assoc * block_size);
@@ -266,8 +345,8 @@ int returnTagIndex(unsigned int i){
 
 void printFile(FILE *trace_file_open) {
     char operation;
-    unsigned int i;
-    fscanf(trace_file_open, "%c %08x ", &operation, &i);
+    unsigned int addr;
+    fscanf(trace_file_open, "%c %08x ", &operation, &addr);
 
     while (!feof(trace_file_open))
     {
@@ -276,28 +355,26 @@ void printFile(FILE *trace_file_open) {
         int offsetSize = log2(block_size);
         int indexSize = log2(sets);
         int sizeInBits = sizeof(offsetSize) * 8;
-        unsigned int x = i;
+        unsigned int x = addr;
         x = x >> offsetSize;
-        int index = i & (int)(pow(2,indexSize)-1);
+        int index = x & (int)(pow(2,indexSize)-1);
         x = x >> indexSize;
-        //fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
-        lru(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+        l1Cache(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(addr));
         //printTagIndex(i);
-        fscanf(trace_file_open,"%c %x ", &operation, &i);
+        fscanf(trace_file_open,"%c %x ", &operation, &addr);
     }
     int sets = l1_size / (l1_assoc * block_size);
     int offsetSize = log2(block_size);
     int indexSize = log2(sets);
     int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = i;
+    unsigned int x = addr;
     x = x >> offsetSize;
-    int index = i & (int)(pow(2,indexSize)-1);
+    int index = x & (int)(pow(2,indexSize)-1);
     x = x >> indexSize;
-    //fifo(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
-    lru(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(i));
+    l1Cache(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(addr));
     printf("===== L1 contents =====\n");
     for (int x = 0; x < 32; x++){
-        printf("Set\t%d:\t%x  %d\t%x  %d\n",x,matrix[x][0],matrix2[x][0],matrix[x][1],matrix2[x][1]);
+        printf("Set\t%d:\t%x  %c\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty,matrix[x][1].tag,matrix[x][1].dirty);
     }
     printf("===== Simulation results (raw) =====\n");
     printf("a. number of L1 reads: %d\n", countRead);
