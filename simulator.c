@@ -302,14 +302,6 @@ void printFile(FILE *trace_file_open) {
     while (!feof(trace_file_open))
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
-        int sets = l1_size / (l1_assoc * block_size);
-        int offsetSize = log2(block_size);
-        int indexSize = log2(sets);
-        int sizeInBits = sizeof(offsetSize) * 8;
-        unsigned int x = addr;
-        x = x >> offsetSize;
-        int index = x & (int)(pow(2,indexSize)-1);
-        x = x >> indexSize;
         l1Cache(operation, addr);
         //printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &addr);
