@@ -109,6 +109,22 @@ void printInput() {
     printf("trace_file: %s\n", trace_file);
 }
 
+void printResults() {
+    printf("===== L1 contents =====\n");
+    for (int x = 0; x < 32; x++){
+        printf("Set\t%d:\t%x  %c\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty,matrix[x][1].tag,matrix[x][1].dirty);
+    }
+    printf("===== Simulation results (raw) =====\n");
+    printf("a. number of L1 reads: %d\n", countRead);
+    printf("b. number of L1 read misses: %d\n", readMiss);
+    printf("c. number of L1 writes: %d\n", countWrite);
+    printf("d. number of L1 write misses: %d\n", writeMiss);
+    printf("e. L1 miss rate: %f\n", (float)(readMiss + writeMiss)/100000);
+    printf("f. number of L1 writebacks: %d\n", writeback);
+    printf("g. number of L2 reads:        0\nh. number of L2 read misses:  0\ni. number of L2 writes:       0\nj. number of L2 write misses: 0\nk. L2 miss rate:              0\nl. number of L2 writebacks:   0\n");
+    printf("m. total memory traffic: %d\n", readMiss + writeMiss + writeback);
+}
+
 void fifoFunction(unsigned int tag, int index){
     int smallest = 9999999;
     int smallestIndex = 0;
@@ -146,7 +162,16 @@ void lruFunction(unsigned int tag, int index){
     }
 }
 
-void l1Cache(char operation,unsigned int tag, int index){
+void l1Cache(char operation,unsigned int addr){
+    int sets = l1_size / (l1_assoc * block_size);
+    int offsetSize = log2(block_size);
+    int indexSize = log2(sets);
+    int sizeInBits = sizeof(offsetSize) * 8;
+    unsigned int x = addr;
+    x = x >> offsetSize;
+    int index = x & (int)(pow(2,indexSize)-1);
+    x = x >> indexSize;
+    unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1);
     char y = 'r';
     char z = 'w';
     if(operation == y){
@@ -249,80 +274,6 @@ void l1Cache(char operation,unsigned int tag, int index){
     }
 }
 
-/*void lru(char operation,unsigned int tag, int index){
-    char y = 'r';
-    char z = 'w';
-    if(operation == y){
-        countRead++;
-    }
-    if(operation == z){
-        countWrite++;
-    }
-    /*for(int x = 0; x < 32; x++){
-        matrix[x][0] = 0;
-        matrix[x][1] = 0;
-    }
-    /*for(int x = 0; x < 32; x++){
-        printf("%x ",matrix[x][0]);
-        printf("%x ",matrix[x][1]);
-    }
-    //printf("\n");
-    printf("%d: (index: %d, ",totalCount++, index);
-    //printf("tag: %x)\n", i);
-    printf("tag: %x)\n", tag);
-    printf("matrix 1: %x\n", matrix[index][0]);
-    printf("matrix 2: %x\n", matrix[index][1]);
-    if(matrix[index][0] == tag || matrix[index][1] == tag){
-        if(operation == y){
-            readHit++;
-            if(matrix[index][0] == tag){
-                unsigned int temp = matrix[index][0];
-                int temp2 = matrix2[index][0];
-                matrix[index][0] = matrix[index][1];
-                matrix2[index][0] = matrix2[index][1];
-                matrix[index][1] = temp;
-                matrix2[index][1] = temp2;
-            }
-        }
-        if(operation == z){
-            writeHit++;
-            if(matrix[index][0] == tag){
-                unsigned int temp = matrix[index][0];
-                int temp2 = matrix2[index][0];
-                matrix[index][0] = matrix[index][1];
-                matrix2[index][0] = matrix2[index][1];
-                matrix[index][1] = temp;
-                matrix2[index][1] = 1;
-            }
-            if(matrix[index][1] == tag){
-                matrix2[index][1] = 1;
-            }
-        }
-    }
-    else{
-        if(matrix2[index][0] == 1){
-            writeback++;
-        }
-        matrix[index][0] = matrix[index][1];
-        matrix[index][1] = tag;
-        matrix2[index][0] = matrix2[index][1];
-        if(operation == y){
-            readMiss++;
-            if(matrix[index][0] == tag){
-                matrix2[index][0] = 0;
-            }
-            if(matrix[index][1] == tag){
-                matrix2[index][1] = 0;
-            }
-        }
-        if(operation == z){
-            writeMiss++;
-            matrix2[index][1] = 1;
-        }
-    }
-    //printf("tag: %x\n", i);
-}*/
-
 void printTagIndex(unsigned int i){
     int sets = l1_size / (l1_assoc * block_size);
     int offsetSize = log2(block_size);
@@ -359,32 +310,12 @@ void printFile(FILE *trace_file_open) {
         x = x >> offsetSize;
         int index = x & (int)(pow(2,indexSize)-1);
         x = x >> indexSize;
-        l1Cache(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(addr));
+        l1Cache(operation, addr);
         //printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &addr);
     }
-    int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = addr;
-    x = x >> offsetSize;
-    int index = x & (int)(pow(2,indexSize)-1);
-    x = x >> indexSize;
-    l1Cache(operation, x & (int)(pow(2,32-indexSize-offsetSize)-1), returnTagIndex(addr));
-    printf("===== L1 contents =====\n");
-    for (int x = 0; x < 32; x++){
-        printf("Set\t%d:\t%x  %c\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty,matrix[x][1].tag,matrix[x][1].dirty);
-    }
-    printf("===== Simulation results (raw) =====\n");
-    printf("a. number of L1 reads: %d\n", countRead);
-    printf("b. number of L1 read misses: %d\n", readMiss);
-    printf("c. number of L1 writes: %d\n", countWrite);
-    printf("d. number of L1 write misses: %d\n", writeMiss);
-    printf("e. L1 miss rate: %f\n", (float)(readMiss + writeMiss)/100000);
-    printf("f. number of L1 writebacks: %d\n", writeback);
-    printf("g. number of L2 reads:        0\nh. number of L2 read misses:  0\ni. number of L2 writes:       0\nj. number of L2 write misses: 0\nk. L2 miss rate:              0\nl. number of L2 writebacks:   0\n");
-    printf("m. total memory traffic: %d\n", readMiss + writeMiss + writeback);
+    l1Cache(operation, addr);
+    printResults();
 }
 
 void free_all(dispatch_list *dis, issue_list *iss, execute_list *exec) {
