@@ -43,6 +43,8 @@ int writeMissL2 = 0;
 int totalCount = 1;
 
 int writeback = 0;
+int writebackL2= 0;
+
 Block matrix[64][1];
 Block matrixL2[128][4];
 
@@ -120,22 +122,31 @@ void printInput() {
 
 void printResults() {
     printf("===== L1 contents =====\n");
-    for (int x = 0; x < 32; x++){
+    /*for (int x = 0; x < 32; x++){
         printf("Set\t%d:\t%x  %c\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty,matrix[x][1].tag,matrix[x][1].dirty);
+    }*/
+    for (int x = 0; x < 64; x++){
+        printf("Set\t%d:\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty);
+    }
+    printf("===== L2 contents =====\n");
+    for (int x = 0; x < 128; x++){
+        printf("Set\t%d:\t%x  %c\t%x  %c\t%x  %c\t%x  %c\n",x,matrixL2[x][0].tag,matrixL2[x][0].dirty,matrixL2[x][1].tag,matrixL2[x][1].dirty,matrixL2[x][2].tag,matrixL2[x][2].dirty,matrixL2[x][3].tag,matrixL2[x][3].dirty);
     }
     printf("===== Simulation results (raw) =====\n");
-    printf("a. number of L1 reads: %d\n", countRead);
-    printf("b. number of L1 read misses: %d\n", readMiss);
-    printf("c. number of L1 writes: %d\n", countWrite);
+    printf("a. number of L1 reads:        %d\n", countRead);
+    printf("b. number of L1 read misses:  %d\n", readMiss);
+    printf("c. number of L1 writes:       %d\n", countWrite);
     printf("d. number of L1 write misses: %d\n", writeMiss);
-    printf("e. L1 miss rate: %f\n", (float)(readMiss + writeMiss)/100000);
-    printf("f. number of L1 writebacks: %d\n", writeback);
+    // TODO UN HARD CODE TOTAL COUNT
+    printf("e. L1 miss rate:              %f\n", (float)(readMiss + writeMiss)/100000);
+    printf("f. number of L1 writebacks:   %d\n", writeback);
     printf("g. number of L2 reads:        %d\n",countReadL2);
     printf("h. number of L2 read misses:  %d\n", readMissL2);
     printf("i. number of L2 writes:       %d\n",countWriteL2);
     printf("j. number of L2 write misses: %d\n", writeMissL2);
-    printf("k. L2 miss rate:              0\n");
-    printf("l. number of L2 writebacks:   0\n");
+    printf("k. L2 miss rate:              %f\n",0);
+    // TODO UN HARD CODE TOTAL COUNT
+    printf("l. number of L2 writebacks:   %d\n", writebackL2);
     printf("m. total memory traffic: %d\n", readMiss + writeMiss + writeback);
 }
 
@@ -149,8 +160,7 @@ void lruFunctionL2(unsigned int tag, int index){
         }
     }
     if(matrixL2[index][biggestIndex].dirty == 'D'){
-        //TODO FIX L2 WRITEBACKS
-        //writeback++;
+        writebackL2++;
     }
     matrixL2[index][biggestIndex].tag = tag;
     matrixL2[index][biggestIndex].addr = addr;
@@ -289,10 +299,9 @@ void fifoFunction(unsigned int tag, int index,unsigned int addr){
     }
     if(matrix[index][smallestIndex].dirty == 'D'){
         writeback++;
+        char z = 'w';
+        l2Cache(z,matrix[index][smallestIndex].addr);
     }
-    char z = 'w';
-    //TODO UNCOMMENT
-    //l2Cache(z,matrix[index][smallestIndex].addr);
     matrix[index][smallestIndex].tag = tag;
     matrix[index][smallestIndex].addr = addr;
     matrix[index][smallestIndex].replacementCount = fifoCount++;
