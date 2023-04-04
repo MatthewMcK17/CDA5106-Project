@@ -45,6 +45,7 @@ int totalCount = 1;
 int writeback = 0;
 int writebackL2= 0;
 
+// TODO FIX TO NOT BE HARD CODED
 Block matrix[64][1];
 Block matrixL2[128][4];
 
@@ -68,12 +69,7 @@ int main(int argc, char *argv[]) {
     printInput();
     printFile(trace_file_open);
 
-    //dispatch = malloc(sizeof(dispatch_list));
-    //issue = malloc(sizeof(issue_list));
-    //execute = malloc(sizeof(execute_list));
-
     fclose(trace_file_open);
-    //free_all(dispatch, issue, execute);
 }
 
 void usage() {
@@ -125,6 +121,7 @@ void printResults() {
     /*for (int x = 0; x < 32; x++){
         printf("Set\t%d:\t%x  %c\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty,matrix[x][1].tag,matrix[x][1].dirty);
     }*/
+    // TODO FIX TO NOT BE HARD CODED
     for (int x = 0; x < 64; x++){
         printf("Set\t%d:\t%x  %c\n",x,matrix[x][0].tag,matrix[x][0].dirty);
     }
@@ -144,7 +141,7 @@ void printResults() {
     printf("h. number of L2 read misses:  %d\n", readMissL2);
     printf("i. number of L2 writes:       %d\n",countWriteL2);
     printf("j. number of L2 write misses: %d\n", writeMissL2);
-    printf("k. L2 miss rate:              %f\n",0);
+    printf("k. L2 miss rate:              0\n");
     // TODO UN HARD CODE TOTAL COUNT
     printf("l. number of L2 writebacks:   %d\n", writebackL2);
     printf("m. total memory traffic: %d\n", readMiss + writeMiss + writeback);
@@ -182,12 +179,10 @@ void l2Cache(char operation,unsigned int addr){
     int index = x & (int)(pow(2,indexSize)-1);
     x = x >> indexSize;
     unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1);
-    char y = 'r';
-    char z = 'w';
-    if(operation == y){
+    if(operation == 'r'){
         countReadL2++;
     }
-    if(operation == z){
+    if(operation == 'w'){
         countWriteL2++;
     }
     printf("L2 operation %c:\n", operation);
@@ -205,7 +200,7 @@ void l2Cache(char operation,unsigned int addr){
         }
     }
     if(flag){
-        if(operation == y){
+        if(operation == 'r'){
             readHitL2++;
             if(replacement_policy == 0){
                 for(int x = 0; x < l2_assoc; x++){
@@ -218,7 +213,7 @@ void l2Cache(char operation,unsigned int addr){
                 }
             }
         }
-        if(operation == z){
+        if(operation == 'w'){
             writeHitL2++;
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].tag == tag){
@@ -269,7 +264,7 @@ void l2Cache(char operation,unsigned int addr){
                 }
             }
         }
-        if(operation == y){
+        if(operation == 'r'){
             readMissL2++;
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].tag == tag){
@@ -277,7 +272,7 @@ void l2Cache(char operation,unsigned int addr){
                 }
             }
         }
-        if(operation == z){
+        if(operation == 'w'){
             writeMissL2++;
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].tag == tag){
@@ -299,8 +294,7 @@ void fifoFunction(unsigned int tag, int index,unsigned int addr){
     }
     if(matrix[index][smallestIndex].dirty == 'D'){
         writeback++;
-        char z = 'w';
-        l2Cache(z,matrix[index][smallestIndex].addr);
+        l2Cache('w',matrix[index][smallestIndex].addr);
     }
     matrix[index][smallestIndex].tag = tag;
     matrix[index][smallestIndex].addr = addr;
@@ -318,8 +312,7 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
     }
     if(matrix[index][biggestIndex].dirty == 'D'){
         writeback++;
-        char z = 'w';
-        l2Cache(z,matrix[index][biggestIndex].addr);
+        l2Cache('w',matrix[index][biggestIndex].addr);
     }
     matrix[index][biggestIndex].tag = tag;
     matrix[index][biggestIndex].addr = addr;
@@ -341,16 +334,13 @@ void l1Cache(char operation,unsigned int addr){
     int index = x & (int)(pow(2,indexSize)-1);
     x = x >> indexSize;
     unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1);
-    char y = 'r';
-    char z = 'w';
-    if(operation == y){
+    if(operation == 'r'){
         countRead++;
     }
-    if(operation == z){
+    if(operation == 'w'){
         countWrite++;
     }
     printf("%d: (index: %d, ",totalCount++, index);
-    //printf("tag: %x)\n", i);
     printf("tag: %x)\n", tag);
     printf("matrix 1: %x\n", matrix[index][0].tag);
     printf("matrix 2: %x\n", matrix[index][1].tag);
@@ -361,7 +351,7 @@ void l1Cache(char operation,unsigned int addr){
         }
     }
     if(flag){
-        if(operation == y){
+        if(operation == 'r'){
             readHit++;
             if(replacement_policy == 0){
                 for(int x = 0; x < l1_assoc; x++){
@@ -374,7 +364,7 @@ void l1Cache(char operation,unsigned int addr){
                 }
             }
         }
-        if(operation == z){
+        if(operation == 'w'){
             writeHit++;
             for(int x = 0; x < l1_assoc; x++){
                 if(matrix[index][x].tag == tag){
@@ -425,21 +415,21 @@ void l1Cache(char operation,unsigned int addr){
                 }
             }
         }
-        if(operation == y){
+        if(operation == 'r'){
             readMiss++;
             for(int x = 0; x < l1_assoc; x++){
                 if(matrix[index][x].tag == tag){
                     matrix[index][x].dirty = ' ';
-                    l2Cache(y,addr);
+                    l2Cache('r',addr);
                 }
             }
         }
-        if(operation == z){
+        if(operation == 'w'){
             writeMiss++;
             for(int x = 0; x < l1_assoc; x++){
                 if(matrix[index][x].tag == tag){
                     matrix[index][x].dirty = 'D';
-                    l2Cache(y,addr);
+                    l2Cache('r',addr);
                 }
             }
         }
@@ -475,7 +465,6 @@ void printFile(FILE *trace_file_open) {
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
         l1Cache(operation, addr);
-        //printTagIndex(i);
         fscanf(trace_file_open,"%c %x ", &operation, &addr);
     }
     l1Cache(operation, addr);
