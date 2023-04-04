@@ -309,10 +309,9 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
     }
     if(matrix[index][biggestIndex].dirty == 'D'){
         writeback++;
+        char z = 'w';
+        l2Cache(z,matrix[index][biggestIndex].addr);
     }
-    char z = 'w';
-    printf("EJECTED %d", matrix[index][biggestIndex].addr);
-    l2Cache(z,matrix[index][biggestIndex].addr);
     matrix[index][biggestIndex].tag = tag;
     matrix[index][biggestIndex].addr = addr;
     matrix[index][biggestIndex].replacementCount = 0;
