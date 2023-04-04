@@ -43,7 +43,7 @@ int writeMissL2 = 0;
 int totalCount = 1;
 
 int writeback = 0;
-Block matrix[32][2];
+Block matrix[64][1];
 Block matrixL2[128][4];
 
 int fifoCount = 0;
@@ -149,7 +149,8 @@ void lruFunctionL2(unsigned int tag, int index){
         }
     }
     if(matrixL2[index][biggestIndex].dirty == 'D'){
-        writeback++;
+        //TODO FIX L2 WRITEBACKS
+        //writeback++;
     }
     matrixL2[index][biggestIndex].tag = tag;
     matrixL2[index][biggestIndex].addr = addr;
@@ -179,6 +180,7 @@ void l2Cache(char operation,unsigned int addr){
     if(operation == z){
         countWriteL2++;
     }
+    printf("L2 operation %c:\n", operation);
     printf("%d: L2(index: %d, ",totalCount-1, index);
     printf("tag: %x) addr %x\n", tag,addr);
     printf("tag2: %x addr %x\n", tag,addr);
