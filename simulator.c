@@ -278,7 +278,7 @@ void l2Cache(char operation,unsigned int addr){
     }
 }
 
-void fifoFunction(unsigned int tag, int index){
+void fifoFunction(unsigned int tag, int index,unsigned int addr){
     int smallest = 9999999;
     int smallestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
@@ -290,16 +290,19 @@ void fifoFunction(unsigned int tag, int index){
     if(matrix[index][smallestIndex].dirty == 'D'){
         writeback++;
     }
+    char z = 'w';
+    //TODO UNCOMMENT
+    //l2Cache(z,matrix[index][smallestIndex].addr);
     matrix[index][smallestIndex].tag = tag;
     matrix[index][smallestIndex].addr = addr;
     matrix[index][smallestIndex].replacementCount = fifoCount++;
 }
 
-void lruFunction(unsigned int tag, int index){
+void lruFunction(unsigned int tag, int index,unsigned int addr){
     int biggest = -1;
     int biggestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
-        if(matrix[index][x].replacementCount > biggest){
+        if(matrix[index][x].replacementCount > biggest && matrix[index][x].tag != 0){
             biggest = matrix[index][x].replacementCount;
             biggestIndex = x;
         }
@@ -308,6 +311,7 @@ void lruFunction(unsigned int tag, int index){
         writeback++;
     }
     char z = 'w';
+    printf("EJECTED %d", matrix[index][biggestIndex].addr);
     l2Cache(z,matrix[index][biggestIndex].addr);
     matrix[index][biggestIndex].tag = tag;
     matrix[index][biggestIndex].addr = addr;
@@ -396,10 +400,10 @@ void l1Cache(char operation,unsigned int addr){
         }
         if(!emptyPlacement){
             if(replacement_policy == 0){
-                lruFunction(tag,index);
+                lruFunction(tag,index,addr);
             }
             if(replacement_policy == 1){
-                fifoFunction(tag,index);
+                fifoFunction(tag,index,addr);
             }
         } else{
             if(replacement_policy == 0){
