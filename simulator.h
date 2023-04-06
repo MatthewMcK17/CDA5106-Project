@@ -1,53 +1,46 @@
 #include <stdlib.h>
 
-#define DEBUG 1
-#define OUTPUT_FILE_SIZE 30
-#define DISPATCH_SIZE 12
-#define ISSUE_SIZE 12
-#define EXECUTE_SIZE 12
+#define DEBUG 0
+#define MAX 0xFFFFFFFF
+#define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
+#define DEFAULT_CAP 1024
 
-typedef enum{LRU, FIFO, foroptimal} Replacement;
-typedef enum{noninclusive, inclusive} Inclusion;
+typedef enum Replacement {LRU, FIFO, OPTIMAL} Replacement;
+typedef enum Inclusion {noninclusive, inclusive} Inclusion;
+typedef unsigned int uint;
+typedef struct Block Block;
+typedef struct ArrayList ArrayList;
+typedef struct Address Address;
 
-typedef struct instruction instruction;
-typedef struct instruction_queue instruction_queue;
-typedef struct fake_ROB fake_ROB;
-typedef struct dispatch_list dispatch_list;
-typedef struct issue_list issue_list;
-typedef struct execute_list execute_list;
-
-struct instruction {
-    int state;
-    int seq_num;
-    int PC;
-    int opcode;
-    int dst;
-    int src1;
-    int src2;
-};
-
-struct instruction_queue {
+struct ArrayList {
+    uint *ar;
     int size;
+    int cap;
 };
 
-struct fake_ROB {
-    int size;
+struct Block {
+    unsigned int addr;
+    unsigned int tag;
+    char dirty;
+    int replacementCount;
 };
 
-struct dispatch_list {
-    int size;
+struct Address {
+    int index;
+    uint tag;
 };
-
-struct issue_list {
-    int size;
-};
-
-struct execute_list {
-    int size;
-};
-
-void usage();
-void free_all(dispatch_list *, issue_list *, execute_list *);
 
 void printInput();
-void printFile();
+void fifo(char, uint);
+void lru(char, uint);
+void printFile(FILE *);
+void usage();
+void init();
+void free_everything();
+
+Address calc_addressing(uint, int);
+
+void trim();
+void append(uint);
+void resize();
+uint getIndex(int);

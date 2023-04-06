@@ -3,7 +3,7 @@ TARGET=sim_cache
 DEPS=simulator.h
 
 all: simulator.c $(DEPS)
-	$(CC) simulator.c -o $(TARGET) -lm
+	$(CC) -g simulator.c -lm -o $(TARGET)
 clean:
 	rm -f $(TARGET)
 	
