@@ -153,14 +153,14 @@ void printInput() {
     printf("L2_SIZE: %d\n", l2_size);
     printf("L2_ASSOC: %d\n", l2_assoc);
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
-    printf("INCLUSION POLICY: %s\n", convertInclusion(inclusion_property));
+    printf("INCLUSION PROPERTY: %s\n", convertInclusion(inclusion_property));
     printf("trace_file: %s\n", trace_file);
 }
 
 void printResults() {
     printf("===== L1 contents =====\n");
     for (int x = 0; x < l1_num_sets; x++) {
-        printf("Set    %d:", x);
+        printf("Set    %d:\t", x);
         for (int y = 0; y < l1_assoc; y++) {
             printf("%x %c  ",matrix[x][y].tag,matrix[x][y].dirty);
         }
@@ -169,7 +169,7 @@ void printResults() {
     if (matrixL2 != NULL) {
         printf("===== L2 contents =====\n");
         for (int x = 0; x < l2_num_sets; x++) {
-            printf("Set    %d:", x);
+            printf("Set    %d:\t", x);
             for (int y = 0; y < l2_assoc; y++) {
                 printf("%x %c  ", matrixL2[x][y].tag, matrixL2[x][y].dirty);
             }
@@ -249,7 +249,7 @@ void l2Cache(char operation,unsigned int addr){
     x = x >> indexSize;
     unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
 
-    Address tmp = calc_addressing(addr, 1);
+    Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
 
     if(operation == 'r'){
