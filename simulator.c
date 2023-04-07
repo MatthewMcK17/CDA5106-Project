@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
     trace_file = argv[8];
     trace_file_open = fopen(argv[8], "r");
     printInput();
-    printFile(trace_file_open);
 
     init();
     printFile(trace_file_open);
