@@ -15,9 +15,6 @@ Replacement replacement_policy;
 Inclusion inclusion_property;
 char *trace_file;
 
-/* typedef long unsigned int mem_addr;
-mem_addr addr; */
-
 int countRead = 0;
 int countWrite = 0;
 
@@ -39,15 +36,14 @@ int totalCount = 0;
 int writeback = 0;
 int writebackL2= 0;
 
-// TODO FIX TO NOT BE HARD CODED
-/* Block matrix[64][1];
-Block matrixL2[128][4]; */
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
 ArrayList *memory_addresses = NULL;
 
 int fifoCount = 0;
+
+int backInvalidationWB = 0;
 
 int main(int argc, char *argv[]) {
     FILE *trace_file_open;
@@ -67,6 +63,11 @@ int main(int argc, char *argv[]) {
     printInput();
 
     init();
+    for (int x = 0; x < 32; x++) {
+        for (int y = 0; y < 2; y++) {
+            matrix[x][y].dirty = 'I';
+        }
+    }
     printFile(trace_file_open);
 
     free_everything();
@@ -212,6 +213,31 @@ void printResults() {
     }
 }
 
+void invalidateCacheL1(unsigned int addr){
+    Address tmp = calc_addressing(addr, 1);
+    unsigned int index = tmp.index,tag = tmp.tag;
+    int flag = 0;
+    int indexStore = 0;
+    for(int x = 0; x < l1_assoc; x++){
+        if(matrix[index][x].tag == tag){
+            indexStore = x;
+            flag = 1;
+            break;
+        }
+    }
+    if(flag == 1){
+        printf("EjcTag (tag: %x, index %x\n)", tag,index);
+        if(inclusion_property == 1){
+            if(matrix[index][indexStore].dirty == 'D'){
+                l1Cache('w',matrix[index][indexStore].addr);
+                backInvalidationWB += 1;
+                printf("InvalidationTest\n");
+            }
+        }
+        matrix[index][indexStore].dirty = 'I';
+    }
+}
+
 void lruFunctionL2(unsigned int addr, unsigned int tag, int index){
     int biggest = -1;
     int biggestIndex = 0;
@@ -224,6 +250,8 @@ void lruFunctionL2(unsigned int addr, unsigned int tag, int index){
     if(matrixL2[index][biggestIndex].dirty == 'D'){
         writebackL2++;
     }
+    printf("Ejected L2 Address: %x\n", matrixL2[index][biggestIndex].addr);
+    invalidateCacheL1(matrixL2[index][biggestIndex].addr);
     matrixL2[index][biggestIndex].tag = tag;
     matrixL2[index][biggestIndex].addr = addr;
     matrixL2[index][biggestIndex].replacementCount = 0;
@@ -238,16 +266,6 @@ void l2Cache(char operation,unsigned int addr){
 
     if (matrixL2 == NULL)
         return; 
-
-/*     int sets = l2_size / (l2_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = addr;
-    x = x >> offsetSize;
-    int index = x & (int)(pow(2,indexSize)-1);
-    x = x >> indexSize;
-    unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
 
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
@@ -343,7 +361,7 @@ void l2Cache(char operation,unsigned int addr){
             readMissL2++;
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].tag == tag){
-                    matrixL2[index][x].dirty = ' ';
+                    matrixL2[index][x].dirty = 'V';
                 }
             }
         }
@@ -388,6 +406,7 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
     if(matrix[index][biggestIndex].dirty == 'D'){
         writeback++;
         l2Cache('w',matrix[index][biggestIndex].addr);
+        printf("L1 Ejected\n");
     }
     matrix[index][biggestIndex].tag = tag;
     matrix[index][biggestIndex].addr = addr;
@@ -400,18 +419,8 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
 }
 
 void l1Cache(char operation,unsigned int addr){
-    /* int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = addr;
-    x = x >> offsetSize;
-    int index = x & (int)(pow(2,indexSize)-1);
-    x = x >> indexSize;
-    unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
     Address tmp = calc_addressing(addr, 1);
     int index = tmp.index, tag = tmp.tag;
-
 
     if(operation == 'r'){
         countRead++;
@@ -500,8 +509,9 @@ void l1Cache(char operation,unsigned int addr){
             readMiss++;
             for(int x = 0; x < l1_assoc; x++){
                 if(matrix[index][x].tag == tag){
-                    matrix[index][x].dirty = ' ';
+                    matrix[index][x].dirty = 'V';
                     l2Cache('r',addr);
+                    printf("L2 READ\n");
                 }
             }
         }
@@ -511,31 +521,12 @@ void l1Cache(char operation,unsigned int addr){
                 if(matrix[index][x].tag == tag){
                     matrix[index][x].dirty = 'D';
                     l2Cache('r',addr);
+                    printf("L2 READ\n");
                 }
             }
         }
     }
 }
-
-/* void printTagIndex(unsigned int i){
-    int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    i = i >> offsetSize;
-    printf("(index: %d, ", i & (int)(pow(2,indexSize)-1));
-    i = i >> indexSize;
-    printf("tag: %x)\n", i & (int)(pow(2,32-indexSize-offsetSize)-1));
-}
-
-int returnTagIndex(unsigned int i){
-    int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    i = i >> offsetSize;
-    return i & (int)(pow(2,indexSize)-1);
-} */
 
 Address calc_addressing(uint addr, int lvl) {
     Address tmp;

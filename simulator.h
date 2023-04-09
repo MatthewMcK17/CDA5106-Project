@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #define MAX 0xFFFFFFFF
 #define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
 #define DEFAULT_CAP 1024
@@ -44,3 +44,7 @@ void trim();
 void append(uint);
 void resize();
 uint getIndex(int);
+
+void invalidateCacheL1(unsigned int addr);
+void l1Cache(char operation,unsigned int addr);
+void l2Cache(char operation,unsigned int addr);
