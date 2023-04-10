@@ -171,7 +171,7 @@ void printInput() {
 void printResults() {
     printf("===== L1 contents =====\n");
     for (int x = 0; x < l1_num_sets; x++) {
-        printf("Set    %d:", x);
+        printf("Set    %d:\t", x);
         for (int y = 0; y < l1_assoc; y++) {
             printf("%x %c  ",matrix[x][y].tag,matrix[x][y].dirty);
         }
@@ -180,7 +180,7 @@ void printResults() {
     if (matrixL2 != NULL) {
         printf("===== L2 contents =====\n");
         for (int x = 0; x < l2_num_sets; x++) {
-            printf("Set    %d:", x);
+            printf("Set    %d:\t", x);
             for (int y = 0; y < l2_assoc; y++) {
                 printf("%x %c  ", matrixL2[x][y].tag, matrixL2[x][y].dirty);
             }
