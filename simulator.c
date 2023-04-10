@@ -288,7 +288,7 @@ void l2Cache(char operation,unsigned int addr){
 
     int flag = 0;
     for(int x = 0; x < l2_assoc; x++){
-        if(matrixL2[index][x].tag == tag){
+        if(matrixL2[index][x].tag == tag && matrixL2[index][x].dirty != 'I'){
             flag = 1;
         }
     }
@@ -436,7 +436,7 @@ void l1Cache(char operation,unsigned int addr){
 #endif
     int flag = 0;
     for(int x = 0; x < l1_assoc; x++){
-        if(matrix[index][x].tag == tag){
+        if(matrix[index][x].tag == tag && matrix[index][x].dirty != 'I'){
             flag = 1;
         }
     }
