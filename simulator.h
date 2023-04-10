@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#define DEBUG 1
+#define DEBUG 0
 #define MAX 0xFFFFFFFF
 #define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
 #define DEFAULT_CAP 1024

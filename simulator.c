@@ -226,11 +226,9 @@ void invalidateCacheL1(unsigned int addr){
         }
     }
     if(flag == 1){
-        printf("EjcTag (tag: %x, index %x\n)", tag,index);
         if(inclusion_property == 1){
             if(matrix[index][indexStore].dirty == 'D'){
                 backInvalidationWB += 1;
-                printf("InvalidationTest\n");
             }
         }
         matrix[index][indexStore].dirty = 'I';
@@ -359,7 +357,7 @@ void l2Cache(char operation,unsigned int addr){
             readMissL2++;
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].tag == tag){
-                    matrixL2[index][x].dirty = 'V';
+                    matrixL2[index][x].dirty = ' ';
                 }
             }
         }
@@ -404,7 +402,6 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
     if(matrix[index][biggestIndex].dirty == 'D'){
         writeback++;
         l2Cache('w',matrix[index][biggestIndex].addr);
-        printf("L1 Ejected\n");
     }
     matrix[index][biggestIndex].tag = tag;
     matrix[index][biggestIndex].addr = addr;
@@ -507,9 +504,8 @@ void l1Cache(char operation,unsigned int addr){
             readMiss++;
             for(int x = 0; x < l1_assoc; x++){
                 if(matrix[index][x].tag == tag){
-                    matrix[index][x].dirty = 'V';
+                    matrix[index][x].dirty = ' ';
                     l2Cache('r',addr);
-                    printf("L2 READ\n");
                 }
             }
         }
@@ -519,7 +515,6 @@ void l1Cache(char operation,unsigned int addr){
                 if(matrix[index][x].tag == tag){
                     matrix[index][x].dirty = 'D';
                     l2Cache('r',addr);
-                    printf("L2 READ\n");
                 }
             }
         }
