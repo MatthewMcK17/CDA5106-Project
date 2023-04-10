@@ -14,9 +14,7 @@ int l2_num_sets;
 Replacement replacement_policy;
 Inclusion inclusion_property;
 char *trace_file;
-
-/* typedef long unsigned int mem_addr;
-mem_addr addr; */
+uint mask;
 
 int countRead = 0;
 int countWrite = 0;
@@ -37,15 +35,14 @@ int writeMissL2 = 0;
 int totalCount = 0;
 
 int writeback = 0;
-int writebackL2= 0;
+int writebackL2 = 0;
+int invalid_wb = 0;
 
-// TODO FIX TO NOT BE HARD CODED
-/* Block matrix[64][1];
-Block matrixL2[128][4]; */
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
-ArrayList *memory_addresses = NULL;
+Vector memory_addresses;
+Vector optimal_set;
 
 int fifoCount = 0;
 
@@ -66,6 +63,8 @@ int main(int argc, char *argv[]) {
     trace_file_open = fopen(argv[8], "r");
     printInput();
 
+    mask = CALCULATE_MASK(block_size);
+
     init();
     printFile(trace_file_open);
 
@@ -74,8 +73,6 @@ int main(int argc, char *argv[]) {
 }
 
 void free_everything() {
-    free(memory_addresses->ar);
-    free(memory_addresses);
 
     for (int i = 0; i < l1_num_sets; i++)
         free(matrix[i]);
@@ -106,11 +103,25 @@ void init() {
         }
     }
 
-    memory_addresses = malloc(sizeof(ArrayList));
-    memory_addresses->cap = DEFAULT_CAP;
-    memory_addresses->size = 0;
+    init_vectors();
+}
 
-    memory_addresses->ar = malloc(sizeof(uint) * memory_addresses->cap);
+void init_vectors() {
+    memory_addresses.list = malloc(sizeof(ArrayList));
+    memory_addresses.list->cap = DEFAULT_CAP;
+    memory_addresses.list->size = 0;
+    memory_addresses.list->ar = malloc(sizeof(uint) * DEFAULT_CAP);
+
+    optimal_set.list = malloc(sizeof(ArrayList));
+    optimal_set.list->cap = l1_assoc;
+    optimal_set.list->size = 0;
+    optimal_set.list->ar = malloc(sizeof(uint) * l1_assoc);
+
+    memory_addresses.push = optimal_set.push = append;
+    memory_addresses.delete = optimal_set.delete = delete;
+    memory_addresses.trim = optimal_set.trim = trim;
+    memory_addresses.resize = optimal_set.resize = resize;
+    optimal_set.clear = clear;
 }
 
 void usage() {
@@ -131,7 +142,7 @@ static inline char *convertReplacement(Replacement replacement_policy){
         char * emptyChar = "Not Valid";
         return emptyChar;
     }
-    char * const replacementStrings[] = {"LRU", "FIFO", "foroptimal"};
+    char * const replacementStrings[] = {"LRU", "FIFO", "optimal"};
     return replacementStrings[replacement_policy];
 }
 
@@ -153,7 +164,7 @@ void printInput() {
     printf("L2_SIZE: %d\n", l2_size);
     printf("L2_ASSOC: %d\n", l2_assoc);
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
-    printf("INCLUSION POLICY: %s\n", convertInclusion(inclusion_property));
+    printf("INCLUSION PROPERTY: %s\n", convertInclusion(inclusion_property));
     printf("trace_file: %s\n", trace_file);
 }
 
@@ -212,7 +223,75 @@ void printResults() {
     }
 }
 
-void lruFunctionL2(unsigned int addr, unsigned int tag, int index){
+int invalidation(Address address) {
+    for (int i = 0; i < l1_assoc; i++) {
+        if (matrix[address.index][i].addr == address.addr) {
+            if (matrix[address.index][i].valid) {
+                matrix[address.index][i].valid = 0;
+                if (matrix[address.index][i].dirty == 'D') {
+                    invalid_wb++;
+                    return 1;
+                }
+                if (matrix[address.index][i].dirty != 'D') {
+                    return 0;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+uint optimal_victim(int lvl) {
+    Address tmp;
+    //uint victim;
+
+    for (int i = totalCount; i < memory_addresses.list->size; i++) {
+        if (optimal_set.list->size == 1) {
+            return optimal_set.list->ar[0];
+        }
+        tmp = calc_addressing(memory_addresses.list->ar[i], lvl);
+        for (int j = 0; j < optimal_set.list->size; j++) {
+            if (optimal_set.list->ar[j] == tmp.addr) {
+                optimal_set.delete(optimal_set.list, j);
+                //victim = optimal_set.list->ar[0];
+                break;
+            }
+        }
+    }
+    return optimal_set.list->ar[0];
+}
+
+void optimalFunctionL2(uint addr, uint tag, int index) {
+    int index2 = -1;
+    uint victim;
+    for (int i = 0; i < l2_assoc; i++) {
+        if (!matrixL2[index][i].valid) {
+            index2 = i;
+            optimal_set.clear(optimal_set.list);
+            // block is invalid case
+            break;
+        } else {
+            optimal_set.push(optimal_set.list, matrixL2[index][i].addr);
+        }
+    }
+
+    victim = optimal_victim(2);
+    for (int i = 0; i < l2_assoc; i++) {
+        if (matrixL2[index][i].addr == victim) {
+            if (matrixL2[index][i].dirty == 'D') {
+                writebackL2++;
+            }
+            matrixL2[index][i].tag = tag;
+            matrixL2[index][i].addr = addr;
+            matrixL2[index][i].replacementCount = 0;
+            matrixL2[index][i].valid = 1;
+            optimal_set.clear(optimal_set.list);
+            break;
+        }
+    }
+}
+
+void lruFunctionL2(uint addr, uint tag, int index){
     int biggest = -1;
     int biggestIndex = 0;
     for(int x = 0; x < l2_assoc; x++){
@@ -234,7 +313,7 @@ void lruFunctionL2(unsigned int addr, unsigned int tag, int index){
     }
 }
 
-void l2Cache(char operation,unsigned int addr){
+void l2Cache(char operation, uint addr){
 
     if (matrixL2 == NULL)
         return; 
@@ -249,7 +328,7 @@ void l2Cache(char operation,unsigned int addr){
     x = x >> indexSize;
     unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
 
-    Address tmp = calc_addressing(addr, 1);
+    Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
 
     if(operation == 'r'){
@@ -270,16 +349,19 @@ void l2Cache(char operation,unsigned int addr){
 
     int flag = 0;
     for(int x = 0; x < l2_assoc; x++){
-        if(matrixL2[index][x].tag == tag){
+        if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
             flag = 1;
         }
     }
+
+    // If block is found
     if(flag){
+        // Read
         if(operation == 'r'){
             readHitL2++;
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
-                    if(matrixL2[index][x].tag == tag){
+                    if(matrix[index][x].valid && matrixL2[index][x].tag == tag){
                         matrixL2[index][x].replacementCount = 0;
                     }
                     else{
@@ -288,16 +370,17 @@ void l2Cache(char operation,unsigned int addr){
                 }
             }
         }
+        // Write
         if(operation == 'w'){
             writeHitL2++;
             for(int x = 0; x < l2_assoc; x++){
-                if(matrixL2[index][x].tag == tag){
+                if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
                     matrixL2[index][x].dirty = 'D';
                 }
             }
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
-                    if(matrixL2[index][x].tag == tag){
+                    if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
                         matrixL2[index][x].replacementCount = 0;
                     }
                     else{
@@ -306,31 +389,37 @@ void l2Cache(char operation,unsigned int addr){
                 }
             }
         }
-    }
-    else{
+    } else {
+        // Add to cache
         int emptyPlacement = 0;
         for(int x = 0; x < l2_assoc; x++){
-            if(matrixL2[index][x].tag == 0){
+            if(matrixL2[index][x].tag == 0 || !matrixL2[index][x].valid) {
                 matrixL2[index][x].tag = tag;
                 matrixL2[index][x].addr = addr;
+                matrixL2[index][x].valid = 1;
+
                 if(replacement_policy == FIFO){
                     matrixL2[index][x].replacementCount = fifoCount++;
                 }
+
                 emptyPlacement = 1;
                 break;
             }
         }
+        // Replace if line is full
         if(!emptyPlacement){
             if(replacement_policy == LRU){
-                lruFunctionL2(addr, tag,index);
+                lruFunctionL2(addr, tag, index);
+            } else if(replacement_policy == FIFO){
+                //fifoFunction(tag, index, addr);
+            } else if (replacement_policy == OPTIMAL) {
+                optimalFunctionL2(addr, tag, index);
             }
-            if(replacement_policy == FIFO){
-                //fifoFunction(tag,index);
-            }
+
         } else{
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
-                    if(matrixL2[index][x].tag == tag){
+                    if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
                         matrixL2[index][x].replacementCount = 0;
                     }
                     else{
@@ -399,16 +488,37 @@ void lruFunction(unsigned int tag, int index,unsigned int addr){
     }
 }
 
+void optimalFunction(uint tag, int index, uint addr) {
+    int index2 = -1;
+    uint victim;
+    for (int i = 0; i < l1_assoc; i++) {
+        if (!matrix[index][i].valid) {
+            index2 = i;
+            optimal_set.clear(optimal_set.list);
+            //block is invalid case
+            break;
+        } else {
+            optimal_set.push(optimal_set.list, matrix[index][i].addr);
+        }
+    }
+    victim = optimal_victim(1);
+    for (int i = 0; i < l1_assoc; i++) {
+        if (matrix[index][i].addr == victim) {
+            if (matrix[index][i].dirty == 'D') {
+                writeback++;
+                l2Cache('w', matrix[index][i].addr);
+            }
+            matrix[index][i].tag = tag;
+            matrix[index][i].addr = addr;
+            matrix[index][i].replacementCount = 0;
+            matrix[index][i].valid = 1;
+            optimal_set.clear(optimal_set.list);
+            break;
+        }
+    }
+}
+
 void l1Cache(char operation,unsigned int addr){
-    /* int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = addr;
-    x = x >> offsetSize;
-    int index = x & (int)(pow(2,indexSize)-1);
-    x = x >> indexSize;
-    unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
     Address tmp = calc_addressing(addr, 1);
     int index = tmp.index, tag = tmp.tag;
 
@@ -427,7 +537,7 @@ void l1Cache(char operation,unsigned int addr){
 #endif
     int flag = 0;
     for(int x = 0; x < l1_assoc; x++){
-        if(matrix[index][x].tag == tag){
+        if(matrix[index][x].valid && matrix[index][x].tag == tag){
             flag = 1;
         }
     }
@@ -436,7 +546,7 @@ void l1Cache(char operation,unsigned int addr){
             readHit++;
             if(replacement_policy == LRU){
                 for(int x = 0; x < l1_assoc; x++){
-                    if(matrix[index][x].tag == tag){
+                    if(matrix[index][x].valid && matrix[index][x].tag == tag){
                         matrix[index][x].replacementCount = 0;
                     }
                     else{
@@ -447,14 +557,14 @@ void l1Cache(char operation,unsigned int addr){
         }
         if(operation == 'w'){
             writeHit++;
-            for(int x = 0; x < l1_assoc; x++){
-                if(matrix[index][x].tag == tag){
+            for(int x = 0; x < l1_assoc; x++) {
+                if(matrix[index][x].valid && matrix[index][x].tag == tag){
                     matrix[index][x].dirty = 'D';
                 }
             }
-            if(replacement_policy == LRU){
+            if(replacement_policy == LRU) {
                 for(int x = 0; x < l1_assoc; x++){
-                    if(matrix[index][x].tag == tag){
+                    if(matrix[index][x].valid && matrix[index][x].tag == tag){
                         matrix[index][x].replacementCount = 0;
                     }
                     else{
@@ -467,9 +577,10 @@ void l1Cache(char operation,unsigned int addr){
     else{
         int emptyPlacement = 0;
         for(int x = 0; x < l1_assoc; x++){
-            if(matrix[index][x].tag == 0){
+            if(matrix[index][x].tag == 0 || !matrix[index][x].valid) {
                 matrix[index][x].tag = tag;
                 matrix[index][x].addr = addr;
+                matrix[index][x].valid = 1;
                 if(replacement_policy == FIFO){
                     matrix[index][x].replacementCount = fifoCount++;
                 }
@@ -477,12 +588,13 @@ void l1Cache(char operation,unsigned int addr){
                 break;
             }
         }
-        if(!emptyPlacement){
-            if(replacement_policy == LRU){
+        if(!emptyPlacement) {
+            if (replacement_policy == LRU){
                 lruFunction(tag,index,addr);
-            }
-            if(replacement_policy == FIFO){
+            } else if(replacement_policy == FIFO){
                 fifoFunction(tag,index,addr);
+            } else if (replacement_policy == OPTIMAL) {
+                optimalFunction(tag, index, addr);
             }
         } else{
             if(replacement_policy == LRU){
@@ -542,6 +654,8 @@ Address calc_addressing(uint addr, int lvl) {
     int offset_size = log2(block_size), index_size = 0;
     uint tag, index;
 
+    tmp.addr = addr & mask;
+
     if (lvl == 1)
         index_size = log2(l1_num_sets);
     else if (lvl == 2)
@@ -554,32 +668,53 @@ Address calc_addressing(uint addr, int lvl) {
     return tmp;
 }
 
-void resize() {
-    memory_addresses->ar = realloc(memory_addresses->ar, sizeof(uint) * (memory_addresses->cap << 1));
+void resize(ArrayList *array_list) {
+    array_list->ar = realloc(array_list->ar, sizeof(uint) * (array_list->cap << 1));
     
-    if (memory_addresses->ar == NULL) {
+    if (array_list->ar == NULL) {
         printf("Allocation Error in ArrayList resizing\n");
         exit(1);
     }
 
-    memory_addresses->cap <<= 1;
+    array_list->cap <<= 1;
 }
 
-void append(uint addr) {
-    if (memory_addresses->size == memory_addresses->cap)
-        resize();
-    memory_addresses->ar[memory_addresses->size++] = addr;
+void append(ArrayList *array_list, uint addr) {
+    if (array_list->size == array_list->cap)
+        resize(array_list);
+    array_list->ar[array_list->size++] = addr;
 }
 
-void trim() {
-    memory_addresses->ar = realloc(memory_addresses->ar, sizeof(uint) * memory_addresses->size);
+void trim(ArrayList *array_list) {
+    array_list->ar = realloc(array_list->ar, sizeof(uint) * array_list->size);
 
-    if (memory_addresses->ar == NULL) {
+    if (array_list->ar == NULL) {
         printf("Allocation Error in trimming\n");
         exit(1);
     }
 
-    memory_addresses->cap = memory_addresses->size;
+    array_list->cap = array_list->size;
+}
+
+void delete(ArrayList *array_list, int index) {
+    if (index >= array_list->size)
+        return;
+    
+    for (int new = index, old = index + 1 ; old < array_list->size; new++, old++) {
+        array_list->ar[new] = array_list->ar[old];
+    }
+    array_list->size--;
+}
+
+void clear(ArrayList *array_list) {
+    if (array_list->size == 0)
+        return;
+
+    free(array_list->ar);
+    array_list->size = 0;
+    array_list->cap = l1_assoc;
+
+    array_list->ar = malloc(sizeof(uint) * l1_assoc);
 }
 
 void printFile(FILE *trace_file_open) {
@@ -587,10 +722,10 @@ void printFile(FILE *trace_file_open) {
     unsigned int addr;
 
     while (fscanf(trace_file_open, "%c %08x ", &operation, &addr) != EOF) {
-        append(addr);
+        memory_addresses.push(memory_addresses.list, addr);
     }
     fseek(trace_file_open, 0, SEEK_SET);
-    trim();
+    memory_addresses.trim(memory_addresses.list);
 
     fscanf(trace_file_open, "%c %08x ", &operation, &addr);
 
@@ -598,8 +733,8 @@ void printFile(FILE *trace_file_open) {
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
         totalCount++;
-        l1Cache(operation, addr);
-        fscanf(trace_file_open,"%c %x ", &operation, &addr);
+        l1Cache(operation, addr & mask);
+        fscanf(trace_file_open,"%c %08x ", &operation, &addr);
     }
     l1Cache(operation, addr);
     printResults();
