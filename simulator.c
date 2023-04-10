@@ -229,7 +229,6 @@ void invalidateCacheL1(unsigned int addr){
         printf("EjcTag (tag: %x, index %x\n)", tag,index);
         if(inclusion_property == 1){
             if(matrix[index][indexStore].dirty == 'D'){
-                l1Cache('w',matrix[index][indexStore].addr);
                 backInvalidationWB += 1;
                 printf("InvalidationTest\n");
             }
@@ -250,7 +249,6 @@ void lruFunctionL2(unsigned int addr, unsigned int tag, int index){
     if(matrixL2[index][biggestIndex].dirty == 'D'){
         writebackL2++;
     }
-    printf("Ejected L2 Address: %x\n", matrixL2[index][biggestIndex].addr);
     invalidateCacheL1(matrixL2[index][biggestIndex].addr);
     matrixL2[index][biggestIndex].tag = tag;
     matrixL2[index][biggestIndex].addr = addr;
