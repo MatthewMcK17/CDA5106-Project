@@ -83,6 +83,12 @@ void free_everything() {
             free(matrixL2[i]);
         free(matrixL2);
     }
+
+    free(optimal_set.list->ar);
+    free(optimal_set.list);
+
+    free(memory_addresses.list->ar);
+    free(memory_addresses.list);
 }
 
 void init() {
