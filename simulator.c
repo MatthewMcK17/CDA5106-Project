@@ -249,7 +249,6 @@ void invalidation(uint addr) {
 
 uint optimal_victim(int lvl) {
     Address tmp;
-    //uint victim;
 
     for (int i = totalCount; i < memory_addresses.list->size; i++) {
         if (optimal_set.list->size == 1) {
@@ -259,7 +258,6 @@ uint optimal_victim(int lvl) {
         for (int j = 0; j < optimal_set.list->size; j++) {
             if (optimal_set.list->ar[j] == tmp.addr) {
                 optimal_set.delete(optimal_set.list, j);
-                //victim = optimal_set.list->ar[0];
                 break;
             }
         }
