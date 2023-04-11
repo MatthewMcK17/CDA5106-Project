@@ -48,7 +48,6 @@ struct Address {
 };
 
 void printInput();
-void lru(char, uint);
 void printFile(FILE *);
 void usage();
 void init();
@@ -57,10 +56,9 @@ void init_vectors();
 
 Address calc_addressing(uint, int);
 
+// Vector operations
 void trim(ArrayList *);
 void append(ArrayList *, uint);
 void resize(ArrayList *);
-uint getIndex(int);
-
 void delete(ArrayList *, int);
 void clear(ArrayList *);

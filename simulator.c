@@ -155,6 +155,14 @@ static inline char *convertInclusion(Inclusion inclusion_property){
     return inclusionStrings[inclusion_property];
 }
 
+static inline char *getFile(char *filepath) {
+    int index = 0;
+
+    while(filepath[index] != '/')
+        index++;
+    index++;
+    return (char *)(filepath + (index * sizeof(char)));
+}
 
 void printInput() {
     printf("===== Simulator configuration =====\n");
@@ -165,7 +173,7 @@ void printInput() {
     printf("L2_ASSOC: %d\n", l2_assoc);
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
     printf("INCLUSION PROPERTY: %s\n", convertInclusion(inclusion_property));
-    printf("trace_file: %s\n", trace_file);
+    printf("trace_file: %s\n", getFile(trace_file));
 }
 
 void printResults() {
@@ -212,7 +220,7 @@ void printResults() {
         int mem_count = readMissL2 + writeMissL2 + writebackL2;
         switch (inclusion_property) {
             case inclusive:
-                printf("m. total memory traffic:      %d\n", mem_count + writeback);
+                printf("m. total memory traffic:      %d\n", mem_count + invalid_wb);
                 break;
             case noninclusive:
                 printf("m. total memory traffic:      %d\n", mem_count);
@@ -223,22 +231,20 @@ void printResults() {
     }
 }
 
-int invalidation(Address address) {
+void invalidation(uint addr) {
+    Address tmp = calc_addressing(addr, 1);
+
     for (int i = 0; i < l1_assoc; i++) {
-        if (matrix[address.index][i].addr == address.addr) {
-            if (matrix[address.index][i].valid) {
-                matrix[address.index][i].valid = 0;
-                if (matrix[address.index][i].dirty == 'D') {
+        if (matrix[tmp.index][i].addr == tmp.addr) {
+            if (matrix[tmp.index][i].valid) {
+                matrix[tmp.index][i].valid = 0;
+                if (matrix[tmp.index][i].dirty == 'D') {
                     invalid_wb++;
-                    return 1;
-                }
-                if (matrix[address.index][i].dirty != 'D') {
-                    return 0;
                 }
             }
+            matrix[tmp.index][i].valid = 0;
         }
     }
-    return 0;
 }
 
 uint optimal_victim(int lvl) {
@@ -278,9 +284,10 @@ void optimalFunctionL2(uint addr, uint tag, int index) {
     victim = optimal_victim(2);
     for (int i = 0; i < l2_assoc; i++) {
         if (matrixL2[index][i].addr == victim) {
-            if (matrixL2[index][i].dirty == 'D') {
+            if (matrixL2[index][i].dirty == 'D')
                 writebackL2++;
-            }
+            if (inclusion_property == 1)
+                invalidation(matrixL2[index][i].addr);
             matrixL2[index][i].tag = tag;
             matrixL2[index][i].addr = addr;
             matrixL2[index][i].replacementCount = 0;
@@ -294,15 +301,19 @@ void optimalFunctionL2(uint addr, uint tag, int index) {
 void lruFunctionL2(uint addr, uint tag, int index){
     int biggest = -1;
     int biggestIndex = 0;
+    Address tmp;
+
     for(int x = 0; x < l2_assoc; x++){
         if(matrixL2[index][x].replacementCount > biggest){
             biggest = matrixL2[index][x].replacementCount;
             biggestIndex = x;
         }
     }
-    if(matrixL2[index][biggestIndex].dirty == 'D'){
+    if(matrixL2[index][biggestIndex].dirty == 'D')
         writebackL2++;
-    }
+    if (inclusion_property == 1)
+        invalidation(matrixL2[index][biggestIndex].addr);
+
     matrixL2[index][biggestIndex].tag = tag;
     matrixL2[index][biggestIndex].addr = addr;
     matrixL2[index][biggestIndex].replacementCount = 0;
@@ -313,20 +324,29 @@ void lruFunctionL2(uint addr, uint tag, int index){
     }
 }
 
+void fifoFunctionL2(uint tag, int index, uint addr){
+    int smallest = 9999999;
+    int smallestIndex = 0;
+    for(int x = 0; x < l2_assoc; x++){
+        if(matrixL2[index][x].replacementCount < smallest){
+            smallest = matrixL2[index][x].replacementCount;
+            smallestIndex = x;
+        }
+    }
+    if(matrixL2[index][smallestIndex].dirty == 'D')
+        writeback++;
+    if (inclusion_property == 1)
+        invalidation(matrixL2[index][smallestIndex].addr);
+
+    matrixL2[index][smallestIndex].tag = tag;
+    matrixL2[index][smallestIndex].addr = addr;
+    matrixL2[index][smallestIndex].replacementCount = fifoCount++;
+}
+
 void l2Cache(char operation, uint addr){
 
     if (matrixL2 == NULL)
         return; 
-
-/*     int sets = l2_size / (l2_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    unsigned int x = addr;
-    x = x >> offsetSize;
-    int index = x & (int)(pow(2,indexSize)-1);
-    x = x >> indexSize;
-    unsigned int tag = x & (int)(pow(2,32-indexSize-offsetSize)-1); */
 
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
@@ -351,6 +371,7 @@ void l2Cache(char operation, uint addr){
     for(int x = 0; x < l2_assoc; x++){
         if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
             flag = 1;
+            break;
         }
     }
 
@@ -361,7 +382,7 @@ void l2Cache(char operation, uint addr){
             readHitL2++;
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
-                    if(matrix[index][x].valid && matrixL2[index][x].tag == tag){
+                    if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
                         matrixL2[index][x].replacementCount = 0;
                     }
                     else{
@@ -411,7 +432,7 @@ void l2Cache(char operation, uint addr){
             if(replacement_policy == LRU){
                 lruFunctionL2(addr, tag, index);
             } else if(replacement_policy == FIFO){
-                //fifoFunction(tag, index, addr);
+                fifoFunctionL2(tag, index, addr);
             } else if (replacement_policy == OPTIMAL) {
                 optimalFunctionL2(addr, tag, index);
             }
@@ -447,7 +468,7 @@ void l2Cache(char operation, uint addr){
     }
 }
 
-void fifoFunction(unsigned int tag, int index,unsigned int addr){
+void fifoFunction(uint tag, int index, uint addr){
     int smallest = 9999999;
     int smallestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
@@ -465,7 +486,7 @@ void fifoFunction(unsigned int tag, int index,unsigned int addr){
     matrix[index][smallestIndex].replacementCount = fifoCount++;
 }
 
-void lruFunction(unsigned int tag, int index,unsigned int addr){
+void lruFunction(uint tag, int index, uint addr){
     int biggest = -1;
     int biggestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
@@ -518,7 +539,7 @@ void optimalFunction(uint tag, int index, uint addr) {
     }
 }
 
-void l1Cache(char operation,unsigned int addr){
+void l1Cache(char operation, uint addr){
     Address tmp = calc_addressing(addr, 1);
     int index = tmp.index, tag = tmp.tag;
 
@@ -590,9 +611,9 @@ void l1Cache(char operation,unsigned int addr){
         }
         if(!emptyPlacement) {
             if (replacement_policy == LRU){
-                lruFunction(tag,index,addr);
+                lruFunction(tag, index, addr);
             } else if(replacement_policy == FIFO){
-                fifoFunction(tag,index,addr);
+                fifoFunction(tag, index, addr);
             } else if (replacement_policy == OPTIMAL) {
                 optimalFunction(tag, index, addr);
             }
@@ -628,26 +649,6 @@ void l1Cache(char operation,unsigned int addr){
         }
     }
 }
-
-/* void printTagIndex(unsigned int i){
-    int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    i = i >> offsetSize;
-    printf("(index: %d, ", i & (int)(pow(2,indexSize)-1));
-    i = i >> indexSize;
-    printf("tag: %x)\n", i & (int)(pow(2,32-indexSize-offsetSize)-1));
-}
-
-int returnTagIndex(unsigned int i){
-    int sets = l1_size / (l1_assoc * block_size);
-    int offsetSize = log2(block_size);
-    int indexSize = log2(sets);
-    int sizeInBits = sizeof(offsetSize) * 8;
-    i = i >> offsetSize;
-    return i & (int)(pow(2,indexSize)-1);
-} */
 
 Address calc_addressing(uint addr, int lvl) {
     Address tmp;
@@ -719,7 +720,7 @@ void clear(ArrayList *array_list) {
 
 void printFile(FILE *trace_file_open) {
     char operation;
-    unsigned int addr;
+    uint addr;
 
     while (fscanf(trace_file_open, "%c %08x ", &operation, &addr) != EOF) {
         memory_addresses.push(memory_addresses.list, addr);
