@@ -1,58 +1,64 @@
 #include <stdlib.h>
 
-#define DEBUG 1
-#define OUTPUT_FILE_SIZE 30
-#define DISPATCH_SIZE 12
-#define ISSUE_SIZE 12
-#define EXECUTE_SIZE 12
+#define DEBUG 0
+#define MAX 0xFFFFFFFF
+#define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
+#define DEFAULT_CAP 1024
 
-typedef enum{LRU, FIFO, foroptimal} Replacement;
-typedef enum{noninclusive, inclusive} Inclusion;
+typedef enum Replacement {LRU, FIFO, OPTIMAL} Replacement;
+typedef enum Inclusion {noninclusive, inclusive} Inclusion;
+typedef unsigned int uint;
+typedef struct Block Block;
+typedef struct ArrayList ArrayList;
+typedef struct Address Address;
+typedef struct Vector Vector;
 
-typedef struct instruction instruction;
-typedef struct instruction_queue instruction_queue;
-typedef struct fake_ROB fake_ROB;
-typedef struct dispatch_list dispatch_list;
-typedef struct issue_list issue_list;
-typedef struct execute_list execute_list;
+typedef void (*Push)(ArrayList *array_list, uint addr);
+typedef void (*Delete)(ArrayList *array_list, int index);
+typedef void (*Trim)(ArrayList *array_list);
+typedef void (*Resize)(ArrayList *array_list);
+typedef void (*Clear)(ArrayList *array_list);
 
-struct instruction {
-    int state;
-    int seq_num;
-    int PC;
-    int opcode;
-    int dst;
-    int src1;
-    int src2;
+struct Vector {
+    ArrayList *list;
+    Push push;
+    Delete delete;
+    Trim trim;
+    Resize resize;
+    Clear clear;
 };
-
-struct instruction_queue {
+struct ArrayList {
+    uint *ar;
     int size;
+    int cap;
 };
 
-struct fake_ROB {
-    int size;
+struct Block {
+    unsigned int addr;
+    unsigned int tag;
+    int valid;
+    char dirty;
+    int replacementCount;
 };
 
-struct dispatch_list {
-    int size;
+struct Address {
+    uint addr;
+    int index;
+    uint tag;
 };
 
-struct issue_list {
-    int size;
-};
-
-struct execute_list {
-    int size;
-};
-
-void usage();
-void free_all(dispatch_list *, issue_list *, execute_list *);
-
-void FakeRetire();
-void Execute();
-void Issue();
-void Dispatch();
-void Fetch();
-int Advance_Cycle();
 void printInput();
+void printFile(FILE *);
+void usage();
+void init();
+void free_everything();
+void init_vectors();
+
+Address calc_addressing(uint, int);
+
+// Vector operations
+void trim(ArrayList *);
+void append(ArrayList *, uint);
+void resize(ArrayList *);
+void delete(ArrayList *, int);
+void clear(ArrayList *);
