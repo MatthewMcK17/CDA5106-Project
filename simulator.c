@@ -38,6 +38,9 @@ int writeback = 0;
 int writebackL2 = 0;
 int invalid_wb = 0;
 
+int index_size_l2 = 0;
+int index_size_l1 = 0;
+
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
@@ -63,7 +66,7 @@ int main(int argc, char *argv[]) {
     trace_file_open = fopen(argv[8], "r");
     printInput();
 
-    mask = CALCULATE_MASK(block_size);
+    //mask = CALCULATE_MASK(block_size);
 
     init();
     printFile(trace_file_open);
@@ -94,6 +97,8 @@ void free_everything() {
 void init() {
     l1_num_sets = l1_size / (l1_assoc  * block_size);
 
+    index_size_l1 = log2(l1_num_sets);
+
     matrix = malloc(sizeof(Block *) * l1_num_sets);
     
     for (int i = 0; i < l1_num_sets; i++) {
@@ -102,6 +107,8 @@ void init() {
 
     if (l2_size) {
         l2_num_sets = l2_size / (l2_assoc * block_size);
+
+        index_size_l2 = log2(l2_num_sets);
 
         matrixL2 = malloc(sizeof(Block *) * l2_num_sets);
         for (int i = 0; i < l2_num_sets; i++) {
@@ -185,7 +192,7 @@ void printInput() {
 void printResults() {
     printf("===== L1 contents =====\n");
     for (int x = 0; x < l1_num_sets; x++) {
-        printf("Set    %d:", x);
+        printf("Set    %d:\t", x);
         for (int y = 0; y < l1_assoc; y++) {
             printf("%x %c  ",matrix[x][y].tag,matrix[x][y].dirty);
         }
@@ -255,6 +262,7 @@ void invalidation(uint addr) {
 
 uint optimal_victim(int lvl) {
     Address tmp;
+    uint victim;
 
     for (int i = totalCount; i < memory_addresses.list->size; i++) {
         if (optimal_set.list->size == 1) {
@@ -264,10 +272,12 @@ uint optimal_victim(int lvl) {
         for (int j = 0; j < optimal_set.list->size; j++) {
             if (optimal_set.list->ar[j] == tmp.addr) {
                 optimal_set.delete(optimal_set.list, j);
+                victim = optimal_set.list->ar[0];
                 break;
             }
         }
     }
+    victim = optimal_set.list->ar[0];
     return optimal_set.list->ar[0];
 }
 
@@ -659,12 +669,12 @@ Address calc_addressing(uint addr, int lvl) {
     int offset_size = log2(block_size), index_size = 0;
     uint tag, index;
 
-    tmp.addr = addr & mask;
+    tmp.addr = addr;// & mask;
 
     if (lvl == 1)
-        index_size = log2(l1_num_sets);
+        index_size = index_size_l1;
     else if (lvl == 2)
-        index_size = log2(l2_num_sets);
+        index_size = index_size_l2;
     addr >>= offset_size;
     tmp.index = (addr & ((1 << index_size) - 1));
     addr >>= index_size;
@@ -738,7 +748,7 @@ void printFile(FILE *trace_file_open) {
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
         totalCount++;
-        l1Cache(operation, addr & mask);
+        l1Cache(operation, addr);//& mask);
         fscanf(trace_file_open,"%c %08x ", &operation, &addr);
     }
     l1Cache(operation, addr);
