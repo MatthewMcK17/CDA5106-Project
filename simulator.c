@@ -4,6 +4,8 @@
 
 #include "simulator.h"
 
+//Tree Struct or MultiProcessing
+
 int block_size;
 int l1_size;
 int l1_assoc;
@@ -74,6 +76,7 @@ int main(int argc, char *argv[]) {
     free_everything();
     fclose(trace_file_open);
 }
+
 
 void free_everything() {
 
