@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include "simulator.h"
 
 int block_size;
@@ -63,7 +59,7 @@ int main(int argc, char *argv[]) {
     trace_file_open = fopen(argv[8], "r");
     printInput();
 
-    mask = CALCULATE_MASK(block_size);
+    mask = gen_mask(block_size);
 
     init();
     printFile(trace_file_open);
@@ -155,25 +151,16 @@ static inline char *convertInclusion(Inclusion inclusion_property){
     return inclusionStrings[inclusion_property];
 }
 
-static inline char *getFile(char *filepath) {
-    int index = 0;
-
-    while(filepath[index] != '/')
-        index++;
-    index++;
-    return (char *)(filepath + (index * sizeof(char)));
-}
-
 void printInput() {
     printf("===== Simulator configuration =====\n");
-    printf("BLOCKSIZE: %d\n", block_size);
-    printf("L1_SIZE: %d\n", l1_size);
-    printf("L1_ASSOC: %d\n", l1_assoc);
-    printf("L2_SIZE: %d\n", l2_size);
-    printf("L2_ASSOC: %d\n", l2_assoc);
+    printf("BLOCKSIZE:          %d\n", block_size);
+    printf("L1_SIZE:            %d\n", l1_size);
+    printf("L1_ASSOC:           %d\n", l1_assoc);
+    printf("L2_SIZE:            %d\n", l2_size);
+    printf("L2_ASSOC:           %d\n", l2_assoc);
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
     printf("INCLUSION PROPERTY: %s\n", convertInclusion(inclusion_property));
-    printf("trace_file: %s\n", getFile(trace_file));
+    printf("trace_file:         %s\n", basename(trace_file));
 }
 
 void printResults() {
@@ -231,6 +218,13 @@ void printResults() {
     }
 }
 
+uint gen_mask(uint block) {
+    int offset = log2(block);
+
+    return ((0xFFFFFFFF >> offset) << offset);
+
+}
+
 void invalidation(uint addr) {
     Address tmp = calc_addressing(addr, 1);
 
@@ -269,12 +263,7 @@ void optimalFunctionL2(uint addr, uint tag, int index) {
     int index2 = -1;
     uint victim;
     for (int i = 0; i < l2_assoc; i++) {
-        if (!matrixL2[index][i].valid) {
-            index2 = i;
-            optimal_set.clear(optimal_set.list);
-            // block is invalid case
-            break;
-        } else {
+        if (matrixL2[index][i].valid) {
             optimal_set.push(optimal_set.list, matrixL2[index][i].addr);
         }
     }
@@ -419,6 +408,8 @@ void l2Cache(char operation, uint addr){
 
                 if(replacement_policy == FIFO){
                     matrixL2[index][x].replacementCount = fifoCount++;
+                } else if (replacement_policy == OPTIMAL) {
+                    optimal_set.clear(optimal_set.list);
                 }
 
                 emptyPlacement = 1;
@@ -511,12 +502,7 @@ void optimalFunction(uint tag, int index, uint addr) {
     int index2 = -1;
     uint victim;
     for (int i = 0; i < l1_assoc; i++) {
-        if (!matrix[index][i].valid) {
-            index2 = i;
-            optimal_set.clear(optimal_set.list);
-            //block is invalid case
-            break;
-        } else {
+        if (matrix[index][i].valid) {
             optimal_set.push(optimal_set.list, matrix[index][i].addr);
         }
     }
@@ -602,6 +588,8 @@ void l1Cache(char operation, uint addr){
                 matrix[index][x].valid = 1;
                 if(replacement_policy == FIFO){
                     matrix[index][x].replacementCount = fifoCount++;
+                } else if (replacement_policy == OPTIMAL) {
+                    optimal_set.clear(optimal_set.list);
                 }
                 emptyPlacement = 1;
                 break;
