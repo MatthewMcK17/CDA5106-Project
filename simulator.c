@@ -34,6 +34,9 @@ int writeback = 0;
 int writebackL2 = 0;
 int invalid_wb = 0;
 
+int index_size_l2 = 0;
+int index_size_l1 = 0;
+
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
@@ -79,10 +82,18 @@ void free_everything() {
             free(matrixL2[i]);
         free(matrixL2);
     }
+
+    free(optimal_set.list->ar);
+    free(optimal_set.list);
+
+    free(memory_addresses.list->ar);
+    free(memory_addresses.list);
 }
 
 void init() {
     l1_num_sets = l1_size / (l1_assoc  * block_size);
+
+    index_size_l1 = log2(l1_num_sets);
 
     matrix = malloc(sizeof(Block *) * l1_num_sets);
     
@@ -92,6 +103,8 @@ void init() {
 
     if (l2_size) {
         l2_num_sets = l2_size / (l2_assoc * block_size);
+
+        index_size_l2 = log2(l2_num_sets);
 
         matrixL2 = malloc(sizeof(Block *) * l2_num_sets);
         for (int i = 0; i < l2_num_sets; i++) {
@@ -222,7 +235,6 @@ uint gen_mask(uint block) {
     int offset = log2(block);
 
     return ((0xFFFFFFFF >> offset) << offset);
-
 }
 
 void invalidation(uint addr) {
@@ -640,13 +652,13 @@ Address calc_addressing(uint addr, int lvl) {
     Address tmp;
     int offset_size = log2(block_size), index_size = 0;
     uint tag, index;
-
+    
     tmp.addr = addr & mask;
 
     if (lvl == 1)
-        index_size = log2(l1_num_sets);
+        index_size = index_size_l1;
     else if (lvl == 2)
-        index_size = log2(l2_num_sets);
+        index_size = index_size_l2;
     addr >>= offset_size;
     tmp.index = (addr & ((1 << index_size) - 1));
     addr >>= index_size;
