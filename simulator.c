@@ -272,7 +272,6 @@ uint optimal_victim(int lvl) {
 }
 
 void optimalFunctionL2(uint addr, uint tag, int index) {
-    int index2 = -1;
     uint victim;
     for (int i = 0; i < l2_assoc; i++) {
         if (matrixL2[index][i].valid) {
@@ -511,7 +510,6 @@ void lruFunction(uint tag, int index, uint addr){
 }
 
 void optimalFunction(uint tag, int index, uint addr) {
-    int index2 = -1;
     uint victim;
     for (int i = 0; i < l1_assoc; i++) {
         if (matrix[index][i].valid) {
