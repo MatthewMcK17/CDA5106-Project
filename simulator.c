@@ -649,7 +649,7 @@ void l1Cache(char operation, uint addr){
         for (int i = 0; i < prefetch_buf_size; i++) {
                 if (prefetch_buf[i].valid && prefetch_buf[i].tag == 'D') {
                     // Prefetch hit
-                    cache[index][x].dirty = true;
+                    matrix[index][x].dirty = true;
                     prefetch_buf[i].valid = false;
                     prefetch_hits++;
                     break;
