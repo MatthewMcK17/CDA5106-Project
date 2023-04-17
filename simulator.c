@@ -43,6 +43,21 @@ int invalid_wb = 0;
 int index_size_l2 = 0;
 int index_size_l1 = 0;
 
+
+
+// Prefetched start
+int prefetch_hits = 0;
+int prefetch_misses = 0;
+int prefetch_adjacent_blocks = 3;
+prefetch_buf = vector<PrefetchBlock>(prefetch_buf_size);
+
+for (int i = 0; i < prefetch_buf_size; i++) {
+            prefetch_buf[i].valid = false;
+        }
+
+// Prefetch End
+
+
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
@@ -611,6 +626,10 @@ void l1Cache(char operation, uint addr){
                 }
             }
         }
+
+        
+
+
     }
     else{
         int emptyPlacement = 0;
@@ -626,6 +645,37 @@ void l1Cache(char operation, uint addr){
                 break;
             }
         }
+
+        for (int i = 0; i < prefetch_buf_size; i++) {
+                if (prefetch_buf[i].valid && prefetch_buf[i].tag == 'D') {
+                    // Prefetch hit
+                    cache[index][x].dirty = true;
+                    prefetch_buf[i].valid = false;
+                    prefetch_hits++;
+                    break;
+                }
+                else{
+                    prefetch_misses++;
+                }
+        }
+
+        int prefetch_tag = (tmp.addr + 1) >> index_size_l1;
+        float rand_num = ((float) rand() / RAND_MAX); // change this to showcase probability
+            if (rand_num < 0.6) {
+                // Add to prefetch buffer
+                for (int i = 0; i < prefetch_buf_size; i++) {
+                    if (!prefetch_buf[i].valid) {
+                        prefetch_buf[i].tag = prefetch_tag;
+                        prefetch_buf[i].valid = true;
+                        break;
+                    }
+                }
+            }
+
+        
+        
+
+
         if(!emptyPlacement) {
             if (replacement_policy == LRU){
                 lruFunction(tag, index, addr);
