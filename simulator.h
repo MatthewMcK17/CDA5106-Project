@@ -33,11 +33,7 @@ struct ArrayList {
     int cap;
 };
 
-struct PrefetchBlock{
-    unsigned int tag;
-    int valid;
-    uint address;
-} ;
+
 
 struct Block {
     unsigned int addr;
