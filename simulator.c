@@ -52,11 +52,11 @@ typedef struct{
     uint address;
 }PrefetchBlock;
 
-int prefetch_hits = 0;
-int prefetch_misses = 0;
-int prefetch_adjacent_blocks = 10;
-int prefetch_buf_size = 10;
-PrefetchBlock* prefetch_buf[10];
+int L1prefetch_hits = 0;
+int L1prefetch_misses = 0;
+int L2prefetch_hits = 0;
+int L2prefetch_misses = 0;
+
 // Prefetch End
 
 
@@ -125,10 +125,6 @@ void init() {
         matrix[i] = calloc(l1_assoc, sizeof(Block));
     }
 
-    for (int i = 0; i < prefetch_buf_size; i++) {
-    prefetch_buf[i] = malloc(sizeof(PrefetchBlock));
-    prefetch_buf[i]-> valid = false;
-    }
     
     if (l2_size) {
         l2_num_sets = l2_size / (l2_assoc * block_size);
@@ -244,26 +240,28 @@ void printResults() {
     printf("h. number of L2 read misses:  %d\n", readMissL2);
     printf("i. number of L2 writes:       %d\n",countWriteL2);
     printf("j. number of L2 write misses: %d\n", writeMissL2);
-    printf("k. number of PrefetchL1 hits: %d\n", prefetch_hits);
-    printf("k. number of PrefetchL1 misses: %d\n", prefetch_misses);
+    printf("k. number of PrefetchL1 hits: %d\n", L1prefetch_hits);
+    printf("l. number of PrefetchL1 misses: %d\n",L1prefetch_misses);
+    printf("m. number of PrefetchL2 hits: %d\n", L2prefetch_hits);
+    printf("n. number of PrefetchL2 misses: %d\n",L2prefetch_misses);
 
     if (matrixL2 == NULL)
-        printf("k. L2 miss rate:              %d\n", 0);
+        printf("o. L2 miss rate:              %d\n", 0);
     else
-        printf("k. L2 miss rate:              %f\n", (float)(readMissL2) / countReadL2);
+        printf("p. L2 miss rate:              %f\n", (float)(readMissL2) / countReadL2);
     
-    printf("l. number of L2 writebacks:   %d\n", writebackL2);
+    printf("q. number of L2 writebacks:   %d\n", writebackL2);
 
     if (matrixL2 == NULL)
-        printf("m. total memory traffic:      %d\n", readMiss + writeMiss + writeback);
+        printf("r. total memory traffic:      %d\n", readMiss + writeMiss + writeback);
     else  {
         int mem_count = readMissL2 + writeMissL2 + writebackL2;
         switch (inclusion_property) {
             case inclusive:
-                printf("m. total memory traffic:      %d\n", mem_count + invalid_wb);
+                printf("s. total memory traffic:      %d\n", mem_count + invalid_wb);
                 break;
             case noninclusive:
-                printf("m. total memory traffic:      %d\n", mem_count);
+                printf("t. total memory traffic:      %d\n", mem_count);
                 break;
             default:
                 break;
@@ -391,6 +389,46 @@ void l2Cache(char operation, uint addr){
 
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
+
+    int prefetch_index = (index + 5) % block_size; // Calculate the index of the block to prefetch
+    Address prefetch_address = calc_addressing((prefetch_index << block_size), 2); // Calculate the address of the block to prefetch
+
+    // Check if the prefetch block is not already in the cache
+    int prefetch_flag = 0;
+    for (int x = 0; x < l2_assoc; x++) {
+        if (matrixL2[prefetch_index][x].valid && matrixL2[prefetch_index][x].tag == prefetch_address.tag) {
+            prefetch_flag = 1;
+            L2prefetch_hits++;
+            break;
+        }
+    }
+
+    if (!prefetch_flag) {
+        // Add to cache
+        L2prefetch_misses++;
+        int prefetch_empty_placement = 0;
+        for (int x = 0; x < l2_assoc; x++) {
+            if (matrixL2[prefetch_index][x].tag == 0 || !matrixL2[prefetch_index][x].valid) {
+                matrixL2[prefetch_index][x].tag = prefetch_address.tag;
+                matrixL2[prefetch_index][x].addr = (prefetch_index << block_size);
+                matrixL2[prefetch_index][x].valid = 1;
+                prefetch_empty_placement = 1;
+                break;
+            }
+        }
+        // Replace if line is full
+        if (!prefetch_empty_placement) {
+            if (replacement_policy == LRU) {
+                lruFunctionL2((prefetch_index << block_size), prefetch_address.tag, prefetch_index);
+            }
+            else if (replacement_policy == FIFO) {
+                fifoFunctionL2(prefetch_address.tag, prefetch_index, (prefetch_index << block_size));
+            }
+            else if (replacement_policy == OPTIMAL) {
+                optimalFunctionL2((prefetch_index << block_size), prefetch_address.tag, prefetch_index);
+            }
+        }
+    }
 
     if(operation == 'r'){
         countReadL2++;
@@ -584,6 +622,49 @@ void l1Cache(char operation, uint addr){
     Address tmp = calc_addressing(addr, 1);
     int index = tmp.index, tag = tmp.tag;
 
+    if (operation == 'r') {
+        Address prefetchAddr = calc_addressing(addr + block_size, 1);
+        int prefetchIndex = prefetchAddr.index, prefetchTag = prefetchAddr.tag;
+
+        // Check if the prefetch address is already in cache
+        int prefetched = 0;
+        for (int x = 0; x < l1_assoc; x++) {
+            if (matrix[prefetchIndex][x].valid && matrix[prefetchIndex][x].tag == prefetchTag) {
+                prefetched = 1;
+                L1prefetch_hits++;
+                break;
+            }
+        }
+
+        if (!prefetched) {
+            L1prefetch_misses++;
+            int emptyPlacement = 0;
+            for (int x = 0; x < l1_assoc; x++) {
+                if (matrix[prefetchIndex][x].tag == 0 || !matrix[prefetchIndex][x].valid) {
+                    matrix[prefetchIndex][x].tag = prefetchTag;
+                    matrix[prefetchIndex][x].addr = addr;
+                    matrix[prefetchIndex][x].valid = 1;
+                    if (replacement_policy == FIFO) {
+                        matrix[prefetchIndex][x].replacementCount = fifoCount++;
+                    }
+                    emptyPlacement = 1;
+                    break;
+                }
+            }
+
+            if (!emptyPlacement) {
+                if (replacement_policy == LRU){
+                    lruFunction(prefetchTag, prefetchIndex, addr);
+                } else if (replacement_policy == FIFO){
+                    fifoFunction(prefetchTag, prefetchIndex, addr);
+                } else if (replacement_policy == OPTIMAL) {
+                    optimalFunction(prefetchTag, prefetchIndex, addr);
+                }
+            }
+        }
+
+    }
+
 
     if(operation == 'r'){
         countRead++;
@@ -598,11 +679,9 @@ void l1Cache(char operation, uint addr){
     printf("matrix 2: %x\n", matrix[index][1].tag);
 #endif
     int flag = 0;
-    int prex = NULL;
     for(int x = 0; x < l1_assoc; x++){
         if(matrix[index][x].valid && matrix[index][x].tag == tag){
             flag = 1;
-            prex = x;
         }
     }
     if(flag){
@@ -659,31 +738,7 @@ void l1Cache(char operation, uint addr){
 
      
 
-        int prefetch_tag = (tmp.addr + 1) >> index_size_l1;
-        float rand_num = drand48(); // generate a random number between 0 and 1
-        if (rand_num < 0.6) {
-    // Add to prefetch buffer
-        for (int i = 0; i < prefetch_buf_size; i++) {
-            if (!prefetch_buf[i]->valid) {
-                prefetch_buf[i]->tag = prefetch_tag;
-                prefetch_buf[i]->valid = true;
-                break;
-            }
-        }
-}
 
-        for (int i = 0; i < prefetch_buf_size; i++) {
-            if (prefetch_buf[i]->valid && prefetch_buf[i]->tag == prefetch_tag) {
-                // Prefetch hit
-                matrix[index][prex].dirty = true;
-                prefetch_buf[i]->valid = false;
-                prefetch_hits++;
-                break;
-            }
-            else {
-                prefetch_misses++;
-            }
-}
 
 
         if(!emptyPlacement) {
