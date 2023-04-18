@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+#include <stdbool.h>
 #include "simulator.h"
 
 //Tree Struct or MultiProcessing
@@ -46,15 +46,17 @@ int index_size_l1 = 0;
 
 
 // Prefetched start
+typedef struct{
+    unsigned int tag;
+    int valid;
+    uint address;
+}PrefetchBlock;
+
 int prefetch_hits = 0;
 int prefetch_misses = 0;
-int prefetch_adjacent_blocks = 3;
-prefetch_buf = vector<PrefetchBlock>(prefetch_buf_size);
-
-for (int i = 0; i < prefetch_buf_size; i++) {
-            prefetch_buf[i].valid = false;
-        }
-
+int prefetch_adjacent_blocks = 10;
+int prefetch_buf_size = 10;
+PrefetchBlock* prefetch_buf[10];
 // Prefetch End
 
 
@@ -123,6 +125,11 @@ void init() {
         matrix[i] = calloc(l1_assoc, sizeof(Block));
     }
 
+    for (int i = 0; i < prefetch_buf_size; i++) {
+    prefetch_buf[i] = malloc(sizeof(PrefetchBlock));
+    prefetch_buf[i]-> valid = false;
+    }
+    
     if (l2_size) {
         l2_num_sets = l2_size / (l2_assoc * block_size);
 
@@ -237,6 +244,8 @@ void printResults() {
     printf("h. number of L2 read misses:  %d\n", readMissL2);
     printf("i. number of L2 writes:       %d\n",countWriteL2);
     printf("j. number of L2 write misses: %d\n", writeMissL2);
+    printf("k. number of PrefetchL1 hits: %d\n", prefetch_hits);
+    printf("k. number of PrefetchL1 misses: %d\n", prefetch_misses);
 
     if (matrixL2 == NULL)
         printf("k. L2 miss rate:              %d\n", 0);
@@ -589,9 +598,11 @@ void l1Cache(char operation, uint addr){
     printf("matrix 2: %x\n", matrix[index][1].tag);
 #endif
     int flag = 0;
+    int prex = NULL;
     for(int x = 0; x < l1_assoc; x++){
         if(matrix[index][x].valid && matrix[index][x].tag == tag){
             flag = 1;
+            prex = x;
         }
     }
     if(flag){
@@ -646,34 +657,33 @@ void l1Cache(char operation, uint addr){
             }
         }
 
-        for (int i = 0; i < prefetch_buf_size; i++) {
-                if (prefetch_buf[i].valid && prefetch_buf[i].tag == 'D') {
-                    // Prefetch hit
-                    matrix[index][x].dirty = true;
-                    prefetch_buf[i].valid = false;
-                    prefetch_hits++;
-                    break;
-                }
-                else{
-                    prefetch_misses++;
-                }
-        }
+     
 
         int prefetch_tag = (tmp.addr + 1) >> index_size_l1;
-        float rand_num = ((float) rand() / RAND_MAX); // change this to showcase probability
-            if (rand_num < 0.6) {
-                // Add to prefetch buffer
-                for (int i = 0; i < prefetch_buf_size; i++) {
-                    if (!prefetch_buf[i].valid) {
-                        prefetch_buf[i].tag = prefetch_tag;
-                        prefetch_buf[i].valid = true;
-                        break;
-                    }
-                }
+        float rand_num = drand48(); // generate a random number between 0 and 1
+        if (rand_num < 0.6) {
+    // Add to prefetch buffer
+        for (int i = 0; i < prefetch_buf_size; i++) {
+            if (!prefetch_buf[i]->valid) {
+                prefetch_buf[i]->tag = prefetch_tag;
+                prefetch_buf[i]->valid = true;
+                break;
             }
+        }
+}
 
-        
-        
+        for (int i = 0; i < prefetch_buf_size; i++) {
+            if (prefetch_buf[i]->valid && prefetch_buf[i]->tag == prefetch_tag) {
+                // Prefetch hit
+                matrix[index][prex].dirty = true;
+                prefetch_buf[i]->valid = false;
+                prefetch_hits++;
+                break;
+            }
+            else {
+                prefetch_misses++;
+            }
+}
 
 
         if(!emptyPlacement) {
