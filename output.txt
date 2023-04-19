@@ -6,216 +6,216 @@ L2_SIZE: 8192
 L2_ASSOC: 4
 REPLACEMENT POLICY: LRU
 INCLUSION PROPERTY: non-inclusive
-trace_file: perl_trace.txt
+trace_file: gcc_trace.txt
 ===== L1 contents =====
-Set    0:	10007b    
-Set    1:	10007b D  
-Set    2:	10007b D  
-Set    3:	10007b    
-Set    4:	100035 D  
-Set    5:	10007b    
-Set    6:	1000b0    
-Set    7:	1000b0    
-Set    8:	1000b0    
-Set    9:	10006f D  
-Set    10:	100058 D  
-Set    11:	100058 D  
-Set    12:	10006f    
-Set    13:	10006f    
-Set    14:	10007a    
-Set    15:	10007a D  
-Set    16:	10007b    
-Set    17:	10007a    
-Set    18:	10006f D  
-Set    19:	10006f    
-Set    20:	10007a    
-Set    21:	10007a D  
-Set    22:	10007a    
-Set    23:	10007a D  
-Set    24:	1ec0cf D  
-Set    25:	10007a    
-Set    26:	10006f    
-Set    27:	10006f    
-Set    28:	10006f D  
-Set    29:	10007a    
-Set    30:	10007a D  
-Set    31:	10007a D  
-Set    32:	10003c D  
-Set    33:	10006f D  
-Set    34:	10006f D  
-Set    35:	1000ad    
-Set    36:	1000ad D  
-Set    37:	1000b1 D  
-Set    38:	1ec0cf D  
-Set    39:	1ec0cf D  
-Set    40:	1ec0cf    
-Set    41:	10007a D  
-Set    42:	10007a D  
-Set    43:	100008    
-Set    44:	100008 D  
-Set    45:	100008    
-Set    46:	1ec0cf D  
-Set    47:	1ec0cf    
-Set    48:	100064 D  
-Set    49:	10004e D  
-Set    50:	1000af    
-Set    51:	1000b3 D  
-Set    52:	100031    
-Set    53:	100031    
-Set    54:	100031    
-Set    55:	100031 D  
-Set    56:	10007a    
-Set    57:	10007a D  
-Set    58:	10007a D  
-Set    59:	10007a    
-Set    60:	1ec0ce    
-Set    61:	1ec0ce D  
-Set    62:	1000b3 D  
-Set    63:	1000b3 D  
+Set    0:	1000c5    
+Set    1:	1000c5 D  
+Set    2:	100147 D  
+Set    3:	100147 D  
+Set    4:	1000c5    
+Set    5:	1000c5    
+Set    6:	1000c5 D  
+Set    7:	1000c5    
+Set    8:	1000c5    
+Set    9:	1000bd D  
+Set    10:	1000bd    
+Set    11:	1000bd D  
+Set    12:	1000c5 D  
+Set    13:	1000c5    
+Set    14:	1000d6    
+Set    15:	1000d6 D  
+Set    16:	1ec0ce D  
+Set    17:	1ec0ce    
+Set    18:	10007d D  
+Set    19:	10007d D  
+Set    20:	10007d    
+Set    21:	10010a    
+Set    22:	10010a D  
+Set    23:	10009d    
+Set    24:	1000f9    
+Set    25:	1000f9    
+Set    26:	1000d5 D  
+Set    27:	10009d    
+Set    28:	10009d D  
+Set    29:	10009d    
+Set    30:	10009d    
+Set    31:	1000fc D  
+Set    32:	100146 D  
+Set    33:	100146 D  
+Set    34:	1000e0 D  
+Set    35:	1000e0    
+Set    36:	100111 D  
+Set    37:	100111    
+Set    38:	1000e0    
+Set    39:	100146 D  
+Set    40:	1000c7 D  
+Set    41:	1000c7    
+Set    42:	1000c7 D  
+Set    43:	100004    
+Set    44:	100004    
+Set    45:	100004    
+Set    46:	100004    
+Set    47:	100004    
+Set    48:	100004    
+Set    49:	100004 D  
+Set    50:	100004    
+Set    51:	100004    
+Set    52:	100004 D  
+Set    53:	100004 D  
+Set    54:	100004 D  
+Set    55:	100004    
+Set    56:	1000c7 D  
+Set    57:	1000c7    
+Set    58:	1000d5 D  
+Set    59:	100146 D  
+Set    60:	100146 D  
+Set    61:	1000c6 D  
+Set    62:	1000c6 D  
+Set    63:	1000c6 D  
 ===== L2 contents =====
-Set    0:8005a D  80059 D  8003d D  0 D  
-Set    1:80058 D  20 D  8005a D  80059 D  
-Set    2:80058    8005a D  40    80059    
-Set    3:60 D  8005a D  80058 D  80059 D  
-Set    4:80 D  80057 D  80059 D  80058 D  
-Set    5:80057 D  8005a D  a0 D  80056 D  
-Set    6:c0 D  8005a D  80059 D  80058 D  
-Set    7:80058 D  e0 D  80059 D  8005a D  
-Set    8:8005a D  100 D  80054 D  80057 D  
-Set    9:120 D  80039 D  80059 D  8005a D  
-Set    10:140 D  8002c D  8003d    8005a D  
-Set    11:8005a    80059 D  8003d    160 D  
-Set    12:180 D  80059 D  8005a D  8003d    
-Set    13:1a0 D  8005a D  8003d    80059 D  
-Set    14:80058 D  8003d D  80059 D  1c0 D  
-Set    15:1e0 D  80059 D  8005a D  80058 D  
-Set    16:8005a D  80058 D  8003a D  80057 D  
-Set    17:8003d    8003a D  80059 D  80058    
-Set    18:80057 D  8003b D  80058 D  80059    
-Set    19:80055 D  80057 D  80059 D  80058 D  
-Set    20:80057 D  80056 D  8003d D  80059 D  
-Set    21:80039 D  80055 D  80056 D  80058 D  
-Set    22:80058 D  80039 D  8003d D  80059 D  
-Set    23:80054 D  80017 D  80057 D  80059 D  
-Set    24:80057 D  8003d D  8003a D  80058 D  
-Set    25:80059 D  8003b D  80058 D  80055 D  
-Set    26:80055 D  80058 D  80059 D  8003d    
-Set    27:80056 D  8003d D  80055 D  80059 D  
-Set    28:80057 D  80059 D  80039 D  80058 D  
-Set    29:80058 D  80057 D  8003d D  80056 D  
-Set    30:8003d D  80058 D  80059 D  8003a    
-Set    31:8003a D  80058 D  80057 D  80059 D  
-Set    32:80057 D  80058 D  80059 D  8001e D  
-Set    33:80058 D  8003b D  80057 D  80059 D  
-Set    34:80039 D  80058 D  80057 D  80059    
-Set    35:80056 D  80057 D  80059 D  80039 D  
-Set    36:80059 D  80050 D  80058 D  80055    
-Set    37:80058 D  80056 D  80057 D  8003a D  
-Set    38:80059 D  80054 D  80057 D  80022 D  
-Set    39:80057 D  80058 D  80022 D  80059 D  
-Set    40:80055 D  8003d D  8003b D  80058 D  
-Set    41:80058 D  80055    8003d D  80059 D  
-Set    42:80057 D  80050    80056 D  80059    
-Set    43:80058 D  80059 D  8003d D  80004 D  
-Set    44:8003a D  80059 D  80058 D  8002d D  
-Set    45:8003d D  80054    8003a D  80058 D  
-Set    46:80054 D  80058 D  80057 D  80059 D  
-Set    47:80055 D  80032 D  80058 D  80059 D  
-Set    48:80059 D  80050 D  80057 D  80058 D  
-Set    49:80058 D  80059 D  80050 D  80027 D  
-Set    50:80056 D  80050 D  80057 D  80059    
-Set    51:8003a D  80058 D  80056 D  80059 D  
-Set    52:80059 D  80057 D  80050    80058 D  
-Set    53:80026 D  80027    80058 D  80050    
-Set    54:80058 D  80027 D  80050 D  80059 D  
-Set    55:80059 D  80058 D  80026 D  80056 D  
-Set    56:80057 D  80050 D  8003d D  8003a D  
-Set    57:80050    8003d D  80058 D  80059 D  
-Set    58:80058 D  80050    8003d    80059 D  
-Set    59:80059 D  80026 D  80027 D  f6067 D  
-Set    60:80050    f6067 D  80058 D  80057    
-Set    61:80057 D  80058    80059 D  80050 D  
-Set    62:80050 D  80057 D  80058 D  80059 D  
-Set    63:8003a D  80058 D  80056 D  80059 D  
-Set    64:8003a    80059 D  8003d D  80036 D  
-Set    65:8003d D  80058 D  80050 D  80059    
-Set    66:80059 D  80050    80058 D  80055 D  
-Set    67:80059 D  80039 D  8001a D  80050 D  
-Set    68:80057 D  80058 D  80056 D  80050 D  
-Set    69:80059 D  8001a D  80056    8003d D  
-Set    70:80056 D  80050 D  8003d D  80059 D  
-Set    71:8003d    80050    8001a D  80059 D  
-Set    72:8003d D  8001a D  80059 D  80037 D  
-Set    73:80058 D  80057 D  80059 D  80050    
-Set    74:8003d D  80037 D  80058 D  80050    
-Set    75:80050    8001a D  80037 D  8003d    
-Set    76:80037 D  80059 D  80050    80056    
-Set    77:80058 D  8003c D  80050    80059 D  
-Set    78:8001a D  80057 D  80059 D  80050 D  
-Set    79:80050 D  80059 D  80057 D  80058 D  
-Set    80:8003d    80050    80056 D  80059 D  
-Set    81:80057 D  80039 D  80050    8003d    
-Set    82:80037 D  80059 D  8003a    8003d D  
-Set    83:80056 D  80059 D  8003c D  8003b    
-Set    84:80058 D  80056 D  80055 D  8003b D  
-Set    85:80057 D  80056 D  80059 D  8003b D  
-Set    86:80057 D  8003b D  80058 D  80059 D  
-Set    87:8003b D  80058 D  80054    80059 D  
-Set    88:80054    f6067 D  8001a D  80056 D  
-Set    89:80056 D  80058 D  80057 D  80059 D  
-Set    90:80037 D  80058 D  80059 D  f6067 D  
-Set    91:80037 D  80059 D  80058 D  80056 D  
-Set    92:80059 D  80056 D  80057 D  80058 D  
-Set    93:80059    80057 D  8003b D  80056 D  
-Set    94:80059 D  80057 D  80058 D  80056 D  
-Set    95:80056 D  80059 D  80058 D  80057 D  
-Set    96:80056 D  80039 D  80057 D  80059 D  
-Set    97:80037 D  80059 D  80056 D  80058 D  
-Set    98:80058 D  80056 D  80059 D  80057 D  
-Set    99:80056 D  80058 D  8003b D  80057 D  
-Set    100:80057 D  80059 D  80058 D  80056 D  
-Set    101:80056 D  80057 D  80058 D  80059 D  
-Set    102:f6067 D  80055 D  80059 D  80057 D  
-Set    103:f6067 D  80058 D  80056 D  80057 D  
-Set    104:80059 D  8003a D  80058 D  80056 D  
-Set    105:80059 D  80057 D  80056 D  80058 D  
-Set    106:80055 D  80056 D  80059 D  80057 D  
-Set    107:80058 D  80056 D  80054 D  80059 D  
-Set    108:80059    f6067 D  80055    80058    
-Set    109:80055 D  80059 D  80058 D  80056 D  
-Set    110:80058 D  80059 D  f6067 D  8003a D  
-Set    111:80059 D  8003b D  80058 D  80056 D  
-Set    112:8003b D  80058 D  80057 D  80059 D  
-Set    113:80059 D  80056 D  80058 D  80057 D  
-Set    114:80058    80054 D  80056 D  80057 D  
-Set    115:80059    80057 D  80055 D  80058 D  
-Set    116:80058 D  8003a D  80059 D  80018 D  
-Set    117:80039 D  8003a D  80059 D  80057 D  
-Set    118:80053    80057 D  80058 D  80018 D  
-Set    119:80059 D  f6067 D  80053 D  80058 D  
-Set    120:80054 D  80053 D  80057 D  80059 D  
-Set    121:80057 D  80059 D  80058 D  80056 D  
-Set    122:80059 D  80057 D  80058    80056 D  
-Set    123:80057 D  80058 D  80059 D  80053 D  
-Set    124:80039 D  80058 D  80059 D  80057 D  
-Set    125:80055 D  80059 D  80056 D  80054 D  
-Set    126:80056 D  80057 D  8003b D  80058 D  
-Set    127:80059    8003b D  80058 D  80057 D  
+Set    0:800a3 D  800ac D  80066 D  0 D  
+Set    1:800a3 D  20 D  8007d D  80066 D  
+Set    2:8006d D  8007e D  40 D  80066 D  
+Set    3:800aa D  60 D  800a3 D  80066 D  
+Set    4:800aa D  80 D  800a3 D  80066 D  
+Set    5:80066 D  800aa D  a0 D  800a3 D  
+Set    6:c0 D  800ac D  800ab D  800a3 D  
+Set    7:8006b D  8006c D  e0 D  800a3 D  
+Set    8:800a3 D  800ac D  8006b D  100 D  
+Set    9:800a3 D  800ac D  8003e D  120 D  
+Set    10:140 D  800ac D  800a3 D  800ab D  
+Set    11:160 D  800ab D  800ac D  800a3 D  
+Set    12:800ac D  8006b D  180 D  800a3 D  
+Set    13:800a3 D  1a0 D  8006f D  80079 D  
+Set    14:800a3 D  8006b D  1c0 D  800ac D  
+Set    15:800ac D  800a3 D  1e0 D  800ab D  
+Set    16:800ac D  f6067 D  800ab D  800a3 D  
+Set    17:800ac D  8007f D  800a3 D  800ab D  
+Set    18:800ab D  800aa D  800a3 D  800ac D  
+Set    19:f6067 D  800ac D  800a3 D  800a8 D  
+Set    20:80085 D  8007f D  800a3 D  800ac D  
+Set    21:800ac D  800a8 D  800a3 D  80085 D  
+Set    22:800ac D  800a3 D  80085 D  800ab D  
+Set    23:f6067 D  800a3 D  800ac D  800a7 D  
+Set    24:800a3 D  800a7 D  800ac D  8003e D  
+Set    25:8007d D  800a3 D  800ab D  800ac D  
+Set    26:800a3 D  800aa D  800ab D  800ac D  
+Set    27:800a3 D  800ab D  800aa D  800ac D  
+Set    28:800ac D  800a3 D  800ab D  8007f D  
+Set    29:8006a D  800a3 D  80074 D  800ac D  
+Set    30:800ac D  8007f D  800ab D  800a3 D  
+Set    31:8007e D  800ab D  800ac D  800a3 D  
+Set    32:80074 D  f6067 D  800a3 D  800ac D  
+Set    33:800ac D  80074 D  800ab D  800a3 D  
+Set    34:800a3 D  80074 D  80070 D  800ac D  
+Set    35:800a8 D  800a9 D  800a3 D  800ac D  
+Set    36:80090    800ac D  800a3 D  80070 D  
+Set    37:80070 D  8007f D  800a3 D  80052    
+Set    38:800ac D  8006f D  800a3 D  8007f D  
+Set    39:800a3 D  80070 D  800a9 D  800ac D  
+Set    40:800a3 D  80052    8005a D  800a9 D  
+Set    41:800ac D  8006b D  8003e D  800a3 D  
+Set    42:8006b D  800ab D  800aa D  800a3 D  
+Set    43:80070 D  800ab D  800a3 D  80002    
+Set    44:800ab D  800aa D  8006b D  800a3 D  
+Set    45:8003e    800a2 D  800ab D  800aa D  
+Set    46:800a3 D  8003e D  800ab D  80052 D  
+Set    47:800ab D  8003e D  800a3 D  800a2 D  
+Set    48:800a3 D  800a2 D  8003e D  800ab D  
+Set    49:800a3 D  80052 D  800ab D  8005e D  
+Set    50:800a2 D  800ab D  800a3 D  8003e D  
+Set    51:800a6 D  8006d D  8007f D  800a3 D  
+Set    52:800ab D  800a8 D  800a9 D  800a3 D  
+Set    53:800a3 D  800ab D  800a8 D  800a9 D  
+Set    54:800a2 D  800ab D  800a3 D  8006d D  
+Set    55:800a3 D  800a2 D  800ab D  80063 D  
+Set    56:80063 D  800a3 D  8006b D  80062 D  
+Set    57:80063 D  800ab D  80062    800a3 D  
+Set    58:80063 D  8006f D  800a3 D  80074 D  
+Set    59:80074 D  80063 D  8007d D  800a3    
+Set    60:80063 D  8006b D  8007f D  800a3    
+Set    61:8006b D  800a3 D  8007d D  80063 D  
+Set    62:800ab D  800a2 D  800a3 D  80063    
+Set    63:80074 D  8006a D  800a3 D  80063    
+Set    64:8005e D  80062 D  800ab D  800a3 D  
+Set    65:800ab D  800aa D  800a3 D  800a2 D  
+Set    66:800a3    800aa D  800ab D  800a2 D  
+Set    67:800a3    800a8 D  800ab D  800a7 D  
+Set    68:800a8 D  800a3 D  800ab D  80062 D  
+Set    69:800a8 D  800a3 D  80062 D  800ab D  
+Set    70:800ab D  800aa D  800a2 D  800a3 D  
+Set    71:800a3 D  800a8 D  80062    8005e D  
+Set    72:80062 D  800a3 D  800ab D  800a8 D  
+Set    73:8005e D  800aa D  800ab D  800a2 D  
+Set    74:80062 D  8005e    800a3 D  8003e D  
+Set    75:800ab D  80062 D  800a2 D  8006c D  
+Set    76:800ab D  8006c D  800a2 D  800aa D  
+Set    77:800ab D  80062 D  8006c D  800a2 D  
+Set    78:8005e    8003e D  8007d D  8006c D  
+Set    79:8003e D  8006c D  800ab D  800a2 D  
+Set    80:800a2 D  800ab D  800aa D  8006c D  
+Set    81:8006c D  8006a D  8003e D  800ab D  
+Set    82:800a2 D  8006a D  800ab D  8006c D  
+Set    83:800a6 D  800a8 D  800a9 D  8006c D  
+Set    84:8003e D  8006c D  8006a    800a9 D  
+Set    85:800a9 D  800a8 D  8006b D  8006a D  
+Set    86:800a9 D  800aa D  800a2 D  800ab D  
+Set    87:800a9 D  8004e    800a8 D  8006a    
+Set    88:8007c D  8006a    8004e D  80062 D  
+Set    89:800a2 D  800ab D  8006a    8007c D  
+Set    90:800ab D  8006c D  800a2 D  800aa D  
+Set    91:8004e    8007f D  800a2 D  80088 D  
+Set    92:800aa D  800ab D  800a9 D  800a2 D  
+Set    93:8004e D  800a2 D  8006c D  800ab D  
+Set    94:800ab D  800aa D  800a2 D  80088 D  
+Set    95:800a2 D  800ab D  8004e D  80088 D  
+Set    96:800ab D  800a2 D  800aa D  80073 D  
+Set    97:800ab D  800a2 D  80088 D  8006a    
+Set    98:8003e D  80054 D  800a2 D  8004e D  
+Set    99:800a2 D  8006d D  800ab D  800a8 D  
+Set    100:800a2 D  8007d D  80088 D  800a8 D  
+Set    101:800a2 D  8004e D  800ab D  800a8 D  
+Set    102:800a9 D  800a2 D  800aa D  800ab D  
+Set    103:800aa D  800a5 D  800a2 D  800ab D  
+Set    104:8008f D  80063 D  800a2 D  8007c D  
+Set    105:800a9 D  800a2 D  8008f D  80063 D  
+Set    106:800ab D  8008f D  800aa D  800a2 D  
+Set    107:80063 D  800a2 D  8008f D  800ab D  
+Set    108:8007f D  8008f D  80088 D  800a2 D  
+Set    109:80073 D  800a2 D  800ab D  8008f    
+Set    110:800aa D  800a2 D  800ab D  8008f D  
+Set    111:8008f D  8006b D  8005e D  8006e D  
+Set    112:800ab D  8006e D  800a2 D  8005e D  
+Set    113:800a2 D  8007d D  8008f    8005e D  
+Set    114:800a2 D  8003d D  8008f D  800ab D  
+Set    115:8005e D  800a2 D  8008f D  800a6 D  
+Set    116:8008f D  800a2 D  80063 D  8003d D  
+Set    117:80063 D  800a2 D  8006a D  8008f D  
+Set    118:800ab D  80039 D  8008f D  800a2 D  
+Set    119:8008f D  800ab D  8006a D  800a2 D  
+Set    120:800a2 D  8006b D  80063 D  800ab D  
+Set    121:800a2 D  800ab D  80039    8006a D  
+Set    122:8006c D  8006a D  8003d D  8006b D  
+Set    123:800ab D  800a2 D  80039 D  8006c D  
+Set    124:80069 D  8006c D  800a2 D  8003d D  
+Set    125:80039 D  800a2 D  800aa D  800ab D  
+Set    126:80069 D  80065 D  800a2 D  80039 D  
+Set    127:800aa D  80065 D  800ab D  800a2 D  
 ===== Simulation results (raw) =====
-a. number of L1 reads:        70107
-b. number of L1 read misses:  20311
-c. number of L1 writes:       29893
-d. number of L1 write misses: 7010
-e. L1 miss rate:              0.273210
-f. number of L1 writebacks:   19826
-g. number of L2 reads:        27321
-h. number of L2 read misses:  2904
-i. number of L2 writes:       19826
-j. number of L2 write misses: 188
-k. number of PrefetchL1 hits: 47164
-l. number of PrefetchL1 misses: 22943
-m. number of PrefetchL2 hits: 46949
-n. number of PrefetchL2 misses: 198
-p. L2 miss rate:              0.106292
-q. number of L2 writebacks:   2015
-t. total memory traffic:      5107
+a. number of L1 reads:        63640
+b. number of L1 read misses:  11788
+c. number of L1 writes:       36360
+d. number of L1 write misses: 9448
+e. L1 miss rate:              0.212360
+f. number of L1 writebacks:   17774
+g. number of L2 reads:        21236
+h. number of L2 read misses:  5493
+i. number of L2 writes:       17774
+j. number of L2 write misses: 204
+k. number of PrefetchL1 hits: 49813
+l. number of PrefetchL1 misses: 13827
+m. number of PrefetchL2 hits: 38742
+n. number of PrefetchL2 misses: 268
+p. L2 miss rate:              0.258665
+q. number of L2 writebacks:   4832
+t. total memory traffic:      10529
