@@ -390,7 +390,10 @@ void l2Cache(char operation, uint addr){
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
 
-        int prefetch_flag = 0;
+    int prefetch_index = (index + 1) % block_size; // Calculate the index of the block to prefetch
+    Address prefetch_address = calc_addressing((prefetch_index << block_size), 2); // Calculate the address of the block to prefetch
+
+    int prefetch_flag = 0;
     for (int x = 0; x < l2_assoc; x++) {
         if (matrixL2[prefetch_index][x].valid && matrixL2[prefetch_index][x].tag == prefetch_address.tag) {
             prefetch_flag = 1;

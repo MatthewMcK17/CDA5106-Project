@@ -6,55 +6,55 @@ L2_SIZE: 0
 L2_ASSOC: 0
 REPLACEMENT POLICY: LRU
 INCLUSION PROPERTY: non-inclusive
-trace_file: perl_trace.txt
+trace_file: go_trace.txt
 ===== L1 contents =====
-Set    0:	2000f6    2000da    
-Set    1:	2000f6 D  2000df D  
-Set    2:	2000f6 D  2000df D  
-Set    3:	200163    20015b    
-Set    4:	20015b D  200163 D  
-Set    5:	200163 D  2000f6    
-Set    6:	200160    2000f6 D  
-Set    7:	200160    2000f6 D  
-Set    8:	200160    2000de    
-Set    9:	2000de D  2000f6 D  
-Set    10:	2000b0 D  2000de    
-Set    11:	2000b0 D  200011    
-Set    12:	200011 D  2000de    
-Set    13:	3d819f    200011 D  
-Set    14:	3d819f D  2000f4    
-Set    15:	2000f4    3d819f D  
-Set    16:	2000f6    2000c9 D  
-Set    17:	2000f4    20009d D  
-Set    18:	2000de D  2000f4    
-Set    19:	2000de    2000f4    
-Set    20:	2000f4    200063    
-Set    21:	2000f4    200063    
-Set    22:	200063    2000f4    
-Set    23:	200063 D  2000f4 D  
-Set    24:	2000f5    3d819e D  
-Set    25:	3d819e D  2000f5 D  
-Set    26:	2000f5    2000de    
-Set    27:	2000f5    2000de    
-Set    28:	3d819d D  2000de D  
-Set    29:	2000f4    3d819d    
-Set    30:	20015a D  2000f4 D  
-Set    31:	2000f4    20015a D  
+Set    0:	20011c D  20011b D  
+Set    1:	20011b D  20011c D  
+Set    2:	20011b D  20011c D  
+Set    3:	20011b D  20011c D  
+Set    4:	20011b D  20011c D  
+Set    5:	20011b D  20011a D  
+Set    6:	20011b D  20011a D  
+Set    7:	20011a D  20011b D  
+Set    8:	20011a D  20011b D  
+Set    9:	20011a D  20011b D  
+Set    10:	20011b D  20011a D  
+Set    11:	20011b D  20011a D  
+Set    12:	20011b D  20011a D  
+Set    13:	20011b D  20011a D  
+Set    14:	20011b D  20011a D  
+Set    15:	20011b D  20011a D  
+Set    16:	20011a D  20011b D  
+Set    17:	20011b D  20011a D  
+Set    18:	20011b D  20011a D  
+Set    19:	20011a D  20011b D  
+Set    20:	20011b D  20011a D  
+Set    21:	20011a D  20011b D  
+Set    22:	20011b D  20011a D  
+Set    23:	20011a D  20011b D  
+Set    24:	20011a D  20011b D  
+Set    25:	20011b D  20011a D  
+Set    26:	20011a D  20011b D  
+Set    27:	20011b D  20011a D  
+Set    28:	20011a D  20011b D  
+Set    29:	20011b D  20011a D  
+Set    30:	20011b D  20011a D  
+Set    31:	20011a D  20011b D  
 ===== Simulation results (raw) =====
-a. number of L1 reads:        70107
-b. number of L1 read misses:  16741
-c. number of L1 writes:       29893
-d. number of L1 write misses: 6509
-e. L1 miss rate:              0.232500
-f. number of L1 writebacks:   18743
+a. number of L1 reads:        60613
+b. number of L1 read misses:  2788
+c. number of L1 writes:       39387
+d. number of L1 write misses: 8419
+e. L1 miss rate:              0.112070
+f. number of L1 writebacks:   14316
 g. number of L2 reads:        0
 h. number of L2 read misses:  0
 i. number of L2 writes:       0
 j. number of L2 write misses: 0
-k. number of PrefetchL1 hits: 48510
-l. number of PrefetchL1 misses: 21597
+k. number of PrefetchL1 hits: 54353
+l. number of PrefetchL1 misses: 6260
 m. number of PrefetchL2 hits: 0
 n. number of PrefetchL2 misses: 0
 o. L2 miss rate:              0
 q. number of L2 writebacks:   0
-r. total memory traffic:      41993
+r. total memory traffic:      25523
