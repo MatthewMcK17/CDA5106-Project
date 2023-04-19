@@ -629,7 +629,7 @@ void l1Cache(char operation, uint addr){
 
         if (operation == 'r') {
         // Stride prefetching
-        Address prefetchAddr = calc_addressing(addr + 10, 1);
+        Address prefetchAddr = calc_addressing(addr + 5, 1); // Change to change size of the prefetch stride
         int prefetchIndex = prefetchAddr.index, prefetchTag = prefetchAddr.tag;
 
         // Check if the prefetch address is already in cache
