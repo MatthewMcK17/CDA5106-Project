@@ -639,7 +639,7 @@ void l1Cache(char operation, uint addr){
                 }
             }
         }
-}
+    }
 #endif
 
 
