@@ -6,7 +6,7 @@
 #include <libgen.h>
 
 #define DEBUG 0
-#define OPT 0
+#define OPT 1
 #define DEFAULT_CAP 1024
 
 typedef enum Replacement {LRU, FIFO, OPTIMAL} Replacement;

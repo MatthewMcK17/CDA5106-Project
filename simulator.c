@@ -599,46 +599,47 @@ void l1Cache(char operation, uint addr){
 
 #if OPT
     if (operation == 'r') {
-    // Stride prefetching
-    Address prefetchAddr = calc_addressing(addr + 1, 1); // Change to change size of the prefetch stride
-    int prefetchIndex = prefetchAddr.index, prefetchTag = prefetchAddr.tag;
+        // Stride prefetching
+        Address prefetchAddr = calc_addressing(addr + 1, 1); // Change to change size of the prefetch stride
+        int prefetchIndex = prefetchAddr.index, prefetchTag = prefetchAddr.tag;
 
-    // Check if the prefetch address is already in cache
-    int prefetched = 0;
-    for (int x = 0; x < l1_assoc; x++) {
-        if (matrix[prefetchIndex][x].valid && matrix[prefetchIndex][x].tag == prefetchTag) {
-            prefetched = 1;
-            L1prefetch_hits++;
-            break;
-        }
-    }
-
-    if (!prefetched) {
-        L1prefetch_misses++;
-        int emptyPlacement = 0;
+        // Check if the prefetch address is already in cache
+        int prefetched = 0;
         for (int x = 0; x < l1_assoc; x++) {
-            if (matrix[prefetchIndex][x].tag == 0 || !matrix[prefetchIndex][x].valid) {
-                matrix[prefetchIndex][x].tag = prefetchTag;
-                matrix[prefetchIndex][x].addr = addr;
-                matrix[prefetchIndex][x].valid = 1;
-                if (replacement_policy == FIFO) {
-                    matrix[prefetchIndex][x].replacementCount = fifoCount++;
-                }
-                emptyPlacement = 1;
+            if (matrix[prefetchIndex][x].valid && matrix[prefetchIndex][x].tag == prefetchTag) {
+                prefetched = 1;
+                L1prefetch_hits++;
                 break;
             }
         }
 
-        if (!emptyPlacement) {
-            if (replacement_policy == LRU){
-                lruFunction(prefetchTag, prefetchIndex, addr);
-            } else if (replacement_policy == FIFO){
-                fifoFunction(prefetchTag, prefetchIndex, addr);
-            } else if (replacement_policy == OPTIMAL) {
-                optimalFunction(prefetchTag, prefetchIndex, addr);
+        if (!prefetched) {
+            L1prefetch_misses++;
+            int emptyPlacement = 0;
+            for (int x = 0; x < l1_assoc; x++) {
+                if (matrix[prefetchIndex][x].tag == 0 || !matrix[prefetchIndex][x].valid) {
+                    matrix[prefetchIndex][x].tag = prefetchTag;
+                    matrix[prefetchIndex][x].addr = addr;
+                    matrix[prefetchIndex][x].valid = 1;
+                    if (replacement_policy == FIFO) {
+                        matrix[prefetchIndex][x].replacementCount = fifoCount++;
+                    }
+                    emptyPlacement = 1;
+                    break;
+                }
+            }
+
+            if (!emptyPlacement) {
+                if (replacement_policy == LRU){
+                    lruFunction(prefetchTag, prefetchIndex, addr);
+                } else if (replacement_policy == FIFO){
+                    fifoFunction(prefetchTag, prefetchIndex, addr);
+                } else if (replacement_policy == OPTIMAL) {
+                    optimalFunction(prefetchTag, prefetchIndex, addr);
+                }
             }
         }
-    }
+}
 #endif
 
 
