@@ -37,8 +37,6 @@ struct ArrayList {
     int cap;
 };
 
-
-
 struct Block {
     unsigned int addr;
     unsigned int tag;
