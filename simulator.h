@@ -1,8 +1,12 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <libgen.h>
 
 #define DEBUG 0
-#define MAX 0xFFFFFFFF
-#define CALCULATE_MASK(x) (MAX >> (x >> 2) << (x >> 2));
+#define OPT 0
 #define DEFAULT_CAP 1024
 
 typedef enum Replacement {LRU, FIFO, OPTIMAL} Replacement;
@@ -49,6 +53,7 @@ struct Address {
     uint tag;
 };
 
+uint gen_mask(uint);
 void printInput();
 void printFile(FILE *);
 void usage();

@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     trace_file_open = fopen(argv[8], "r");
     printInput();
 
-    //mask = CALCULATE_MASK(block_size);
+    mask = gen_mask(block_size);
 
     init();
     printFile(trace_file_open);
@@ -189,31 +189,22 @@ static inline char *convertInclusion(Inclusion inclusion_property){
     return inclusionStrings[inclusion_property];
 }
 
-static inline char *getFile(char *filepath) {
-    int index = 0;
-
-    while(filepath[index] != '/')
-        index++;
-    index++;
-    return (char *)(filepath + (index * sizeof(char)));
-}
-
 void printInput() {
     printf("===== Simulator configuration =====\n");
-    printf("BLOCKSIZE: %d\n", block_size);
-    printf("L1_SIZE: %d\n", l1_size);
-    printf("L1_ASSOC: %d\n", l1_assoc);
-    printf("L2_SIZE: %d\n", l2_size);
-    printf("L2_ASSOC: %d\n", l2_assoc);
+    printf("BLOCKSIZE:          %d\n", block_size);
+    printf("L1_SIZE:            %d\n", l1_size);
+    printf("L1_ASSOC:           %d\n", l1_assoc);
+    printf("L2_SIZE:            %d\n", l2_size);
+    printf("L2_ASSOC:           %d\n", l2_assoc);
     printf("REPLACEMENT POLICY: %s\n", convertReplacement(replacement_policy));
     printf("INCLUSION PROPERTY: %s\n", convertInclusion(inclusion_property));
-    printf("trace_file: %s\n", getFile(trace_file));
+    printf("trace_file:         %s\n", basename(trace_file));
 }
 
 void printResults() {
     printf("===== L1 contents =====\n");
     for (int x = 0; x < l1_num_sets; x++) {
-        printf("Set    %d:\t", x);
+        printf("Set    %d:", x);
         for (int y = 0; y < l1_assoc; y++) {
             printf("%x %c  ",matrix[x][y].tag,matrix[x][y].dirty);
         }
@@ -240,33 +231,41 @@ void printResults() {
     printf("h. number of L2 read misses:  %d\n", readMissL2);
     printf("i. number of L2 writes:       %d\n",countWriteL2);
     printf("j. number of L2 write misses: %d\n", writeMissL2);
-    printf("k. number of PrefetchL1 hits: %d\n", L1prefetch_hits);
-    printf("l. number of PrefetchL1 misses: %d\n",L1prefetch_misses);
-    printf("m. number of PrefetchL2 hits: %d\n", L2prefetch_hits);
-    printf("n. number of PrefetchL2 misses: %d\n",L2prefetch_misses);
+#if OPT
+    printf("Optimization. number of PrefetchL1 hits: %d\n", L1prefetch_hits);
+    printf("Optimization. number of PrefetchL1 misses: %d\n",L1prefetch_misses);
+    printf("Optimization. number of PrefetchL2 hits: %d\n", L2prefetch_hits);
+    printf("Optimization. number of PrefetchL2 misses: %d\n",L2prefetch_misses);
+#endif
 
     if (matrixL2 == NULL)
-        printf("o. L2 miss rate:              %d\n", 0);
+        printf("k. L2 miss rate:              %d\n", 0);
     else
-        printf("p. L2 miss rate:              %f\n", (float)(readMissL2) / countReadL2);
+        printf("k. L2 miss rate:              %f\n", (float)(readMissL2) / countReadL2);
     
-    printf("q. number of L2 writebacks:   %d\n", writebackL2);
+    printf("l. number of L2 writebacks:   %d\n", writebackL2);
 
     if (matrixL2 == NULL)
-        printf("r. total memory traffic:      %d\n", readMiss + writeMiss + writeback);
+        printf("m. total memory traffic:      %d\n", readMiss + writeMiss + writeback);
     else  {
         int mem_count = readMissL2 + writeMissL2 + writebackL2;
         switch (inclusion_property) {
             case inclusive:
-                printf("s. total memory traffic:      %d\n", mem_count + invalid_wb);
+                printf("m. total memory traffic:      %d\n", mem_count + invalid_wb);
                 break;
             case noninclusive:
-                printf("t. total memory traffic:      %d\n", mem_count);
+                printf("m. total memory traffic:      %d\n", mem_count);
                 break;
             default:
                 break;
         }
     }
+}
+
+uint gen_mask(uint block) {
+    int offset = log2(block);
+
+    return ((0xFFFFFFFF >> offset) << offset);
 }
 
 void invalidation(uint addr) {
@@ -287,7 +286,6 @@ void invalidation(uint addr) {
 
 uint optimal_victim(int lvl) {
     Address tmp;
-    uint victim;
 
     for (int i = totalCount; i < memory_addresses.list->size; i++) {
         if (optimal_set.list->size == 1) {
@@ -297,25 +295,17 @@ uint optimal_victim(int lvl) {
         for (int j = 0; j < optimal_set.list->size; j++) {
             if (optimal_set.list->ar[j] == tmp.addr) {
                 optimal_set.delete(optimal_set.list, j);
-                victim = optimal_set.list->ar[0];
                 break;
             }
         }
     }
-    victim = optimal_set.list->ar[0];
     return optimal_set.list->ar[0];
 }
 
 void optimalFunctionL2(uint addr, uint tag, int index) {
-    int index2 = -1;
     uint victim;
     for (int i = 0; i < l2_assoc; i++) {
-        if (!matrixL2[index][i].valid) {
-            index2 = i;
-            optimal_set.clear(optimal_set.list);
-            // block is invalid case
-            break;
-        } else {
+        if (matrixL2[index][i].valid) {
             optimal_set.push(optimal_set.list, matrixL2[index][i].addr);
         }
     }
@@ -389,7 +379,7 @@ void l2Cache(char operation, uint addr){
 
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
-
+#if OPT
     int prefetch_index = (index + 1) % block_size; // Calculate the index of the block to prefetch
     Address prefetch_address = calc_addressing((prefetch_index << block_size), 2); // Calculate the address of the block to prefetch
 
@@ -428,6 +418,7 @@ void l2Cache(char operation, uint addr){
             }
         }
     }
+#endif
 
     if(operation == 'r'){
         countReadL2++;
@@ -499,6 +490,8 @@ void l2Cache(char operation, uint addr){
 
                 if(replacement_policy == FIFO){
                     matrixL2[index][x].replacementCount = fifoCount++;
+                } else if (replacement_policy == OPTIMAL) {
+                    optimal_set.clear(optimal_set.list);
                 }
 
                 emptyPlacement = 1;
@@ -588,15 +581,9 @@ void lruFunction(uint tag, int index, uint addr){
 }
 
 void optimalFunction(uint tag, int index, uint addr) {
-    int index2 = -1;
     uint victim;
     for (int i = 0; i < l1_assoc; i++) {
-        if (!matrix[index][i].valid) {
-            index2 = i;
-            optimal_set.clear(optimal_set.list);
-            //block is invalid case
-            break;
-        } else {
+        if (matrix[index][i].valid) {
             optimal_set.push(optimal_set.list, matrix[index][i].addr);
         }
     }
@@ -622,7 +609,7 @@ void l1Cache(char operation, uint addr){
     int index = tmp.index, tag = tmp.tag;
 
 
-
+#if OPT
     if (operation == 'r') {
         Address prefetchAddr = calc_addressing(addr + block_size, 1);
         int prefetchIndex = prefetchAddr.index, prefetchTag = prefetchAddr.tag;
@@ -708,6 +695,7 @@ void l1Cache(char operation, uint addr){
         }
 
     }
+#endif
 
 
     if(operation == 'r'){
@@ -774,6 +762,8 @@ void l1Cache(char operation, uint addr){
                 matrix[index][x].valid = 1;
                 if(replacement_policy == FIFO){
                     matrix[index][x].replacementCount = fifoCount++;
+                } else if (replacement_policy == OPTIMAL) {
+                    optimal_set.clear(optimal_set.list);
                 }
                 emptyPlacement = 1;
                 break;
@@ -830,8 +820,8 @@ Address calc_addressing(uint addr, int lvl) {
     Address tmp;
     int offset_size = log2(block_size), index_size = 0;
     uint tag, index;
-
-    tmp.addr = addr;// & mask;
+    
+    tmp.addr = addr & mask;
 
     if (lvl == 1)
         index_size = index_size_l1;
@@ -910,7 +900,7 @@ void printFile(FILE *trace_file_open) {
     {
         //printf ("%c %08x\n",operation, i & (0xfffffff0));
         totalCount++;
-        l1Cache(operation, addr);//& mask);
+        l1Cache(operation, addr & mask);
         fscanf(trace_file_open,"%c %08x ", &operation, &addr);
     }
     l1Cache(operation, addr);
