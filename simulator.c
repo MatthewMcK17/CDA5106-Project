@@ -838,6 +838,6 @@ void printFile(FILE *trace_file_open) {
         l1Cache(operation, addr & mask);
         fscanf(trace_file_open,"%c %08x ", &operation, &addr);
     }
-    l1Cache(operation, addr);
+    l1Cache(operation, addr & mask);
     printResults();
 }
