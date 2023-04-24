@@ -51,6 +51,7 @@ int L2prefetch_misses = 0;
 
 // Prefetch End
 
+// L1/L2 matrices structure
 Block **matrix = NULL;
 Block **matrixL2 = NULL;
 
@@ -60,6 +61,8 @@ Vector optimal_set;
 int fifoCount = 0;
 
 int main(int argc, char *argv[]) {
+
+    // Read for command line arguments
     FILE *trace_file_open;
     if (argc != 9) {
         usage();
@@ -78,15 +81,17 @@ int main(int argc, char *argv[]) {
 
     mask = gen_mask(block_size);
 
+    // Initialize matrices and parse the trace file
     init();
     printFile(trace_file_open);
 
+    // Close everything
     free_everything();
     fclose(trace_file_open);
 }
 
 void free_everything() {
-
+    // Free matrices
     for (int i = 0; i < l1_num_sets; i++)
         free(matrix[i]);
     free(matrix);
@@ -105,6 +110,7 @@ void free_everything() {
 }
 
 void init() {
+    // Initialize matrices
     l1_num_sets = l1_size / (l1_assoc  * block_size);
 
     index_size_l1 = log2(l1_num_sets);
@@ -130,6 +136,7 @@ void init() {
 }
 
 void init_vectors() {
+    // Initialize vectors
     memory_addresses.list = malloc(sizeof(ArrayList));
     memory_addresses.list->cap = DEFAULT_CAP;
     memory_addresses.list->size = 0;
@@ -148,6 +155,7 @@ void init_vectors() {
 }
 
 void usage() {
+    // Print usage statement
     char *usage_statement = "Usage: ./sim_cache <BLOCKSIZE> <L1_SIZE> <L1_ASSOC> <L2_SIZE> <L2_ASSOC> <REPLACEMENT_POLICY> <INCLUSION_PROPERTY> <trace_file> \n" \
                             "   <BLOCKSIZE> - Block size in bytes. Same block size for all caches in the memory hierarchy. (positive integer)\n" \
                             "   <L1_SIZE> - L1 cache size in bytes. (positive integer) \n" \
@@ -161,6 +169,7 @@ void usage() {
 }
 
 static inline char *convertReplacement(Replacement replacement_policy){
+    // Convert replacement policy from int to string
     if (replacement_policy > 2){
         char * emptyChar = "Not Valid";
         return emptyChar;
@@ -170,6 +179,7 @@ static inline char *convertReplacement(Replacement replacement_policy){
 }
 
 static inline char *convertInclusion(Inclusion inclusion_property){
+    // Convert inclusion property from int to string
     if (inclusion_property > 1){
         char * emptyChar = "Not Valid";
         return emptyChar;
@@ -179,6 +189,7 @@ static inline char *convertInclusion(Inclusion inclusion_property){
 }
 
 void printInput() {
+    // Print input
     printf("===== Simulator configuration =====\n");
     printf("BLOCKSIZE:          %d\n", block_size);
     printf("L1_SIZE:            %d\n", l1_size);
@@ -191,6 +202,7 @@ void printInput() {
 }
 
 void printResults() {
+    // Print L1 contents and if dirty
     printf("===== L1 contents =====\n");
     for (int x = 0; x < l1_num_sets; x++) {
         printf("Set    %d:", x);
@@ -199,6 +211,7 @@ void printResults() {
         }
         printf("\n");
     }
+    // Print L2 contents and if dirty
     if (matrixL2 != NULL) {
         printf("===== L2 contents =====\n");
         for (int x = 0; x < l2_num_sets; x++) {
@@ -209,6 +222,7 @@ void printResults() {
             printf("\n");
         }
     }
+    // Print raw stats
     printf("===== Simulation results (raw) =====\n");
     printf("a. number of L1 reads:        %d\n", countRead);
     printf("b. number of L1 read misses:  %d\n", readMiss);
@@ -252,12 +266,14 @@ void printResults() {
 }
 
 uint gen_mask(uint block) {
+    // generate mask based on block
     int offset = log2(block);
 
     return ((0xFFFFFFFF >> offset) << offset);
 }
 
 void invalidation(uint addr) {
+    // Check to invalidate L1 from eject L2 blocks
     Address tmp = calc_addressing(addr, 1);
 
     for (int i = 0; i < l1_assoc; i++) {
@@ -274,6 +290,7 @@ void invalidation(uint addr) {
 }
 
 uint optimal_victim(int lvl) {
+    // Find optimal victim
     Address tmp;
 
     for (int i = totalCount; i < memory_addresses.list->size; i++) {
@@ -292,6 +309,7 @@ uint optimal_victim(int lvl) {
 }
 
 void optimalFunctionL2(uint addr, uint tag, int index) {
+    // Optimal function for L2
     uint victim;
     for (int i = 0; i < l2_assoc; i++) {
         if (matrixL2[index][i].valid) {
@@ -317,6 +335,7 @@ void optimalFunctionL2(uint addr, uint tag, int index) {
 }
 
 void lruFunctionL2(uint addr, uint tag, int index){
+    // LRU function for L2. Find the largest number and replace with new block.
     int biggest = -1;
     int biggestIndex = 0;
     Address tmp;
@@ -343,6 +362,7 @@ void lruFunctionL2(uint addr, uint tag, int index){
 }
 
 void fifoFunctionL2(uint tag, int index, uint addr){
+    // FIFO function for L2. Find the smallest number and replace with new block.
     int smallest = 9999999;
     int smallestIndex = 0;
     for(int x = 0; x < l2_assoc; x++){
@@ -366,6 +386,7 @@ void l2Cache(char operation, uint addr){
     if (matrixL2 == NULL)
         return; 
 
+    // Calculate index, tag and offset for L2
     Address tmp = calc_addressing(addr, 2);
     int index = tmp.index, tag = tmp.tag;
 #if OPT
@@ -409,6 +430,7 @@ void l2Cache(char operation, uint addr){
     }
 #endif
 
+    // Check if read or write hit
     if(operation == 'r'){
         countReadL2++;
     }
@@ -424,7 +446,7 @@ void l2Cache(char operation, uint addr){
         printf("matrix %d L2: %x\n", (i + 1), matrixL2[index][i].tag);
     }
 #endif
-
+    // Check to see if block exists
     int flag = 0;
     for(int x = 0; x < l2_assoc; x++){
         if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
@@ -438,6 +460,7 @@ void l2Cache(char operation, uint addr){
         // Read
         if(operation == 'r'){
             readHitL2++;
+            // If LRU update replacement count
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
                     if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
@@ -452,11 +475,13 @@ void l2Cache(char operation, uint addr){
         // Write
         if(operation == 'w'){
             writeHitL2++;
+            // Mark as dirty
             for(int x = 0; x < l2_assoc; x++){
                 if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
                     matrixL2[index][x].dirty = 'D';
                 }
             }
+            // If LRU update replacement count
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
                     if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
@@ -469,7 +494,7 @@ void l2Cache(char operation, uint addr){
             }
         }
     } else {
-        // Add to cache
+        // Add to cache. Check to see if a open block and just place it
         int emptyPlacement = 0;
         for(int x = 0; x < l2_assoc; x++){
             if(matrixL2[index][x].tag == 0 || !matrixL2[index][x].valid) {
@@ -477,6 +502,7 @@ void l2Cache(char operation, uint addr){
                 matrixL2[index][x].addr = addr;
                 matrixL2[index][x].valid = 1;
 
+                // If FIFO, update replacement count.
                 if(replacement_policy == FIFO){
                     matrixL2[index][x].replacementCount = fifoCount++;
                 } else if (replacement_policy == OPTIMAL) {
@@ -487,7 +513,7 @@ void l2Cache(char operation, uint addr){
                 break;
             }
         }
-        // Replace if line is full
+        // Replace if line is full with respective property
         if(!emptyPlacement){
             if(replacement_policy == LRU){
                 lruFunctionL2(addr, tag, index);
@@ -498,6 +524,7 @@ void l2Cache(char operation, uint addr){
             }
 
         } else{
+            // Update all blocks replacement count in the row if LRU
             if(replacement_policy == LRU){
                 for(int x = 0; x < l2_assoc; x++){
                     if(matrixL2[index][x].valid && matrixL2[index][x].tag == tag){
@@ -508,7 +535,8 @@ void l2Cache(char operation, uint addr){
                     }
                 }
             }
-        }
+        } 
+        // Check if read miss and update to clean
         if(operation == 'r'){
             readMissL2++;
             for(int x = 0; x < l2_assoc; x++){
@@ -517,6 +545,7 @@ void l2Cache(char operation, uint addr){
                 }
             }
         }
+        // Check if write miss and update to dirty
         if(operation == 'w'){
             writeMissL2++;
             for(int x = 0; x < l2_assoc; x++){
@@ -529,6 +558,7 @@ void l2Cache(char operation, uint addr){
 }
 
 void fifoFunction(uint tag, int index, uint addr){
+    // FIFO function for L1. Find the smallest number and replace with new block.
     int smallest = 9999999;
     int smallestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
@@ -547,6 +577,7 @@ void fifoFunction(uint tag, int index, uint addr){
 }
 
 void lruFunction(uint tag, int index, uint addr){
+    // LRU function for L1. Find the biggest number and replace with new block.
     int biggest = -1;
     int biggestIndex = 0;
     for(int x = 0; x < l1_assoc; x++){
@@ -570,6 +601,7 @@ void lruFunction(uint tag, int index, uint addr){
 }
 
 void optimalFunction(uint tag, int index, uint addr) {
+    // optimal function for L1. Find the optimal victim.
     uint victim;
     for (int i = 0; i < l1_assoc; i++) {
         if (matrix[index][i].valid) {
@@ -594,6 +626,7 @@ void optimalFunction(uint tag, int index, uint addr) {
 }
 
 void l1Cache(char operation, uint addr){
+    // Calculate index, tag and offset for L2
     Address tmp = calc_addressing(addr, 1);
     int index = tmp.index, tag = tmp.tag;
 
@@ -642,7 +675,7 @@ void l1Cache(char operation, uint addr){
     }
 #endif
 
-
+    // Check if read or write hit
     if(operation == 'r'){
         countRead++;
     }
@@ -655,15 +688,19 @@ void l1Cache(char operation, uint addr){
     printf("matrix 1: %x\n", matrix[index][0].tag);
     printf("matrix 2: %x\n", matrix[index][1].tag);
 #endif
+    // Check to see if block exists
     int flag = 0;
     for(int x = 0; x < l1_assoc; x++){
         if(matrix[index][x].valid && matrix[index][x].tag == tag){
             flag = 1;
         }
     }
+    // If block is found
     if(flag){
+        // Read
         if(operation == 'r'){
             readHit++;
+            // If LRU update replacement count
             if(replacement_policy == LRU){
                 for(int x = 0; x < l1_assoc; x++){
                     if(matrix[index][x].valid && matrix[index][x].tag == tag){
@@ -675,13 +712,16 @@ void l1Cache(char operation, uint addr){
                 }
             }
         }
+        // Check if write hit
         if(operation == 'w'){
             writeHit++;
+            // Mark as dirty
             for(int x = 0; x < l1_assoc; x++) {
                 if(matrix[index][x].valid && matrix[index][x].tag == tag){
                     matrix[index][x].dirty = 'D';
                 }
             }
+            // If LRU update replacement count
             if(replacement_policy == LRU) {
                 for(int x = 0; x < l1_assoc; x++){
                     if(matrix[index][x].valid && matrix[index][x].tag == tag){
@@ -695,12 +735,14 @@ void l1Cache(char operation, uint addr){
         }
     }
     else{
+        // Add to cache. Check to see if a open block and just place it
         int emptyPlacement = 0;
         for(int x = 0; x < l1_assoc; x++){
             if(matrix[index][x].tag == 0 || !matrix[index][x].valid) {
                 matrix[index][x].tag = tag;
                 matrix[index][x].addr = addr;
                 matrix[index][x].valid = 1;
+                // If FIFO, update replacement count.
                 if(replacement_policy == FIFO){
                     matrix[index][x].replacementCount = fifoCount++;
                 } else if (replacement_policy == OPTIMAL) {
@@ -710,6 +752,7 @@ void l1Cache(char operation, uint addr){
                 break;
             }
         }
+        // Replace if line is full with respective property
         if(!emptyPlacement) {
             if (replacement_policy == LRU){
                 lruFunction(tag, index, addr);
@@ -719,6 +762,7 @@ void l1Cache(char operation, uint addr){
                 optimalFunction(tag, index, addr);
             }
         } else{
+            // Update all blocks replacement count in the row if LRU
             if(replacement_policy == LRU){
                 for(int x = 0; x < l1_assoc; x++){
                     if(matrix[index][x].tag == tag){
@@ -730,6 +774,7 @@ void l1Cache(char operation, uint addr){
                 }
             }
         }
+        // Check if read miss and update to clean
         if(operation == 'r'){
             readMiss++;
             for(int x = 0; x < l1_assoc; x++){
@@ -739,6 +784,7 @@ void l1Cache(char operation, uint addr){
                 }
             }
         }
+        // Check if write miss and update to dirty
         if(operation == 'w'){
             writeMiss++;
             for(int x = 0; x < l1_assoc; x++){
