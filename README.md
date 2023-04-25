@@ -14,3 +14,4 @@ Trace #5: ./sim_cache 16 1024 2 8192 4 0 0 traces/gcc_trace.txt
 Trace #6: ./sim_cache 16 1024 1 8192 4 0 0 traces/go_trace.txt
 Trace #7: ./sim_cache 16 1024 2 8192 4 0 1 traces/gcc_trace.txt
 Trace #8: ./sim_cache 16 1024 1 8192 4 0 1 traces/compress_trace.txt
+  
